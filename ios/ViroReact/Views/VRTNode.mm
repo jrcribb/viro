@@ -859,24 +859,15 @@ static NSHashTable *shaderMaterialsNodesRegistry = nil;
         // Get materials from geometry
         std::vector<std::shared_ptr<VROMaterial>> currentMaterials = geometry->getMaterials();
 
-        NSLog(@"[SHADER OVERRIDE] Current materials count: %zu", currentMaterials.size());
-        for (size_t i = 0; i < currentMaterials.size(); i++) {
-            auto mat = currentMaterials[i];
-            bool hasDiffuseTex = mat->getDiffuse().getTexture() != nullptr;
-            NSLog(@"[SHADER OVERRIDE]   Material %zu: has diffuse texture = %@", i, hasDiffuseTex ? @"YES" : @"NO");
-        }
-
         // Check if we have materials to work with
         if (currentMaterials.empty()) {
             // Model hasn't loaded yet or has no materials, skip for now
-            NSLog(@"[SHADER OVERRIDE] No materials found, skipping");
             return;
         }
 
         // Store original embedded materials on first call (only if non-empty!)
         // For VRX/FBX with async textures, we'll update this when textures finish loading
         if (_originalEmbeddedMaterials.empty()) {
-            NSLog(@"[SHADER OVERRIDE] Storing %zu original materials", currentMaterials.size());
             _originalEmbeddedMaterials = currentMaterials;
         } else {
             // Check if we should UPDATE stored materials (for VRX with async textures)
@@ -903,10 +894,7 @@ static NSHashTable *shaderMaterialsNodesRegistry = nil;
             }
 
             if (currentHasTextures && !storedHasTextures) {
-                NSLog(@"[SHADER OVERRIDE] Updating stored materials with textures");
                 _originalEmbeddedMaterials = currentMaterials;
-            } else {
-                NSLog(@"[SHADER OVERRIDE] Using %zu stored original materials", _originalEmbeddedMaterials.size());
             }
         }
 
@@ -932,16 +920,28 @@ static NSHashTable *shaderMaterialsNodesRegistry = nil;
                 // Create a new material copying the original (preserves textures)
                 std::shared_ptr<VROMaterial> mergedMat = std::make_shared<VROMaterial>(originalMat);
 
-                // CRITICAL: Copy lighting model from shader override to override PBR
-                // This allows "Constant" lighting to override the VRX model's "PhysicallyBased" lighting
+                // CRITICAL: Copy properties from shader override material
+                // Similar to Android's dest.copyShaderModifiers(source) approach
+                // We only copy properties that affect rendering, NOT colors/textures
+                // (colors are set dynamically in shader modifiers)
                 mergedMat->setLightingModel(shaderMaterial->getLightingModel());
-                NSLog(@"[SHADER OVERRIDE] Set lighting model from shader material");
+                mergedMat->setShininess(shaderMaterial->getShininess());
+                mergedMat->setBlendMode(shaderMaterial->getBlendMode());
+                mergedMat->setTransparencyMode(shaderMaterial->getTransparencyMode());
+                mergedMat->setCullMode(shaderMaterial->getCullMode());
+                mergedMat->setWritesToDepthBuffer(shaderMaterial->getWritesToDepthBuffer());
+                mergedMat->setReadsFromDepthBuffer(shaderMaterial->getReadsFromDepthBuffer());
+
 
                 // NOTE: We DON'T clear existing shader modifiers because:
                 // 1. We always start from a fresh copy of original materials (which have skinning modifiers)
                 // 2. Clearing would remove critical system modifiers like skinning
                 // 3. No accumulation occurs since each shader change starts from stored originals
                 // mergedMat->removeAllShaderModifiers(); // ← REMOVED to preserve skinning modifiers
+
+                // CRITICAL: Disable thread restrictions temporarily (like Android does)
+                // This allows shader modifiers to be copied synchronously during material setup
+                mergedMat->setThreadRestrictionEnabled(false);
 
                 // Copy shader modifiers from shader material to merged material
                 for (const auto &modifier : shaderMaterial->getShaderModifiers()) {
@@ -964,6 +964,13 @@ static NSHashTable *shaderMaterialsNodesRegistry = nil;
                 for (const auto &uniform : shaderMaterial->getShaderUniformMat4s()) {
                     mergedMat->setShaderUniform(uniform.first, uniform.second);
                 }
+                // Copy shader uniform textures (like Android does)
+                for (const auto &uniform : shaderMaterial->getShaderUniformTextures()) {
+                    mergedMat->setShaderUniform(uniform.first, uniform.second);
+                }
+
+                // Re-enable thread restrictions
+                mergedMat->setThreadRestrictionEnabled(true);
 
                 mergedMaterials.push_back(mergedMat);
 
@@ -1000,12 +1007,10 @@ static NSHashTable *shaderMaterialsNodesRegistry = nil;
                         childOriginalMaterials = childGeometry->getMaterials();
                         if (!childOriginalMaterials.empty()) {
                             _childNodeOriginalMaterials[childPtr] = childOriginalMaterials;
-                            NSLog(@"[SHADER OVERRIDE] Stored %zu original materials for child node", childOriginalMaterials.size());
                         }
                     } else {
                         // Use stored original materials as baseline
                         childOriginalMaterials = _childNodeOriginalMaterials[childPtr];
-                        NSLog(@"[SHADER OVERRIDE] Using %zu stored original materials for child node", childOriginalMaterials.size());
                     }
 
                     if (!childOriginalMaterials.empty()) {
@@ -1021,24 +1026,32 @@ static NSHashTable *shaderMaterialsNodesRegistry = nil;
                             if (!clonedMaterialsArray) {
                                 clonedMaterialsArray = [[NSMutableArray alloc] init];
                                 self.shaderOverrideMap[shaderMaterialName] = clonedMaterialsArray;
-                            } else {
-                                // CRITICAL: Clear array from previous scene runs to prevent accumulation
-                                // Without this, arrays grow on each rerun, causing "index beyond bounds" crashes
-                                [clonedMaterialsArray removeAllObjects];
                             }
+                            // NOTE: Do NOT clear the array here - we need to accumulate materials from ALL child nodes
+                            // The array is cleared once at the start of applyShaderOverridesRecursive (line 852)
 
                             std::vector<std::shared_ptr<VROMaterial>> mergedChildMaterials;
+
                             for (const auto &originalMat : childOriginalMaterials) {
                                 std::shared_ptr<VROMaterial> mergedMat = std::make_shared<VROMaterial>(originalMat);
 
-                                // CRITICAL: Copy lighting model from shader override to override PBR
+                                // Copy rendering properties from shader override (NOT colors/textures)
                                 mergedMat->setLightingModel(shaderMaterial->getLightingModel());
+                                mergedMat->setShininess(shaderMaterial->getShininess());
+                                mergedMat->setBlendMode(shaderMaterial->getBlendMode());
+                                mergedMat->setTransparencyMode(shaderMaterial->getTransparencyMode());
+                                mergedMat->setCullMode(shaderMaterial->getCullMode());
+                                mergedMat->setWritesToDepthBuffer(shaderMaterial->getWritesToDepthBuffer());
+                                mergedMat->setReadsFromDepthBuffer(shaderMaterial->getReadsFromDepthBuffer());
 
                                 // NOTE: We DON'T clear existing shader modifiers because:
                                 // 1. We always start from a fresh copy of original materials (which have skinning modifiers)
                                 // 2. Clearing would remove critical system modifiers like skinning
                                 // 3. No accumulation occurs since each shader change starts from stored originals
                                 // mergedMat->removeAllShaderModifiers(); // ← REMOVED to preserve skinning modifiers
+
+                                // Disable thread restrictions (like Android)
+                                mergedMat->setThreadRestrictionEnabled(false);
 
                                 // Copy shader modifiers
                                 for (const auto &modifier : shaderMaterial->getShaderModifiers()) {
@@ -1058,6 +1071,12 @@ static NSHashTable *shaderMaterialsNodesRegistry = nil;
                                 for (const auto &uniform : shaderMaterial->getShaderUniformMat4s()) {
                                     mergedMat->setShaderUniform(uniform.first, uniform.second);
                                 }
+                                for (const auto &uniform : shaderMaterial->getShaderUniformTextures()) {
+                                    mergedMat->setShaderUniform(uniform.first, uniform.second);
+                                }
+
+                                // Re-enable thread restrictions
+                                mergedMat->setThreadRestrictionEnabled(true);
 
                                 mergedChildMaterials.push_back(mergedMat);
 
@@ -1095,7 +1114,6 @@ static NSHashTable *shaderMaterialsNodesRegistry = nil;
             if (it != _childNodeOriginalMaterials.end()) {
                 childGeometry->setMaterials(it->second);
                 childGeometry->updateSubstrate();
-                NSLog(@"[SHADER OVERRIDE] Restored %zu original materials for child node", it->second.size());
             }
         }
         // Recurse to grandchildren
