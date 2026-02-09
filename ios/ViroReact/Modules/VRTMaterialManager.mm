@@ -31,6 +31,11 @@
 #import "VRTUIImageWrapper.h"
 #import <React/RCTUtils.h>
 #import <React/RCTImageSource.h>
+#import <ViroKit/VROShaderModifier.h>
+#import <ViroKit/VROTextureUtil.h>
+#import <ViroKit/VROVideoTextureiOS.h>
+#import <ViroKit/VROImageiOS.h>
+#import "VRTNode.h"
 
 @implementation RCTBridge (VRTMaterialManager)
 
@@ -133,16 +138,43 @@ RCT_EXPORT_MODULE()
 // for the renderer. We add to self.materials so that we can reload all
 // materials at once if we move to a new EGL context
 RCT_EXPORT_METHOD(setJSMaterials:(NSDictionary *)materials) {
-    [self.materials addEntriesFromDictionary:materials];
+    if (!_materials) {
+        _materials = [[NSMutableDictionary alloc] init];
+    }
+    [_materials addEntriesFromDictionary:materials];
     [self loadMaterials:materials];
 }
 
 RCT_EXPORT_METHOD(deleteMaterials:(NSArray *)materials) {
     if (_materialDictionary && materials) {
         for (NSString *material in materials) {
+            // Remove material wrapper (RAII will handle cleanup)
             [_materialDictionary removeObjectForKey:material];
         }
+        // Also remove change listeners for deleted materials
+        for (NSString *material in materials) {
+            [_materialChangeListeners removeObjectForKey:material];
+        }
     }
+}
+
+RCT_EXPORT_METHOD(updateShaderUniform:(NSString *)materialName
+                  uniformName:(NSString *)uniformName
+                  uniformType:(NSString *)uniformType
+                  value:(id)value) {
+    std::shared_ptr<VROMaterial> vroMaterial = [self getMaterialByName:materialName];
+    if (!vroMaterial) {
+        RCTLogError(@"Material '%@' not found for uniform update", materialName);
+        return;
+    }
+
+    [self setUniformForMaterial:vroMaterial name:uniformName type:uniformType value:value];
+
+    // Propagate uniform updates to nodes using this material as a shader override
+    [VRTNode updateShaderOverridesForMaterial:materialName];
+
+    // NOTE: Do NOT call updateSubstrate() - it deletes and recreates the shader binding!
+    // The uniforms will be bound automatically during rendering via bindMaterialUniforms()
 }
 
 // Clear all materials and images to release memory
@@ -308,7 +340,6 @@ RCT_EXPORT_METHOD(deleteMaterials:(NSArray *)materials) {
             if (path != nil) {
                 if ([self isVideoTexture:path]) {
                      std::shared_ptr<VROVideoTextureiOS> texture = std::make_shared<VROVideoTextureiOS>(VROStereoMode::None);
-                    NSLog(@"Create material for video texture: %p for mat name: %@", texture.get(), materialName);
                     [materialWrapper setVideoTexturePathForMaterialProp:materialPropertyName path:path];
                     [self setTextureForMaterial:vroMaterial texture:texture name:materialPropertyName];
                     [self loadProperties:material forTexture:texture];
@@ -366,10 +397,89 @@ RCT_EXPORT_METHOD(deleteMaterials:(NSArray *)materials) {
                 vroMaterial->getMetalness().setColor({ [material[key] floatValue], 1.0, 1.0, 1.0 });
             } else if ([@"roughness" caseInsensitiveCompare:materialPropertyName]  == NSOrderedSame){
                 vroMaterial->getRoughness().setColor({ [material[key] floatValue], 1.0, 1.0, 1.0 });
+            } else if ([@"shaderModifiers" caseInsensitiveCompare:materialPropertyName] == NSOrderedSame) {
+                NSDictionary *modifiers = material[key];
+                for (id entryPointKey in modifiers) {
+                    NSString *entryPointName = (NSString *)entryPointKey;
+                    id modifierValue = modifiers[entryPointKey];
+                    
+                    // Handle both string and dictionary formats
+                    NSString *modifierCode;
+                    if ([modifierValue isKindOfClass:[NSString class]]) {
+                        modifierCode = (NSString *)modifierValue;
+                    } else if ([modifierValue isKindOfClass:[NSDictionary class]]) {
+                        NSDictionary *modifierDict = (NSDictionary *)modifierValue;
+                        NSString *uniforms = modifierDict[@"uniforms"];
+                        NSString *body = modifierDict[@"body"];
+                        if (uniforms && uniforms.length > 0) {
+                            modifierCode = [NSString stringWithFormat:@"%@\n%@", uniforms, body ? body : @""];
+                        } else {
+                            modifierCode = body;
+                        }
+                        
+                        if (!modifierCode) {
+                            RCTLogError(@"Shader modifier dictionary must contain 'body' or 'uniforms' key");
+                            continue;
+                        }
+                    } else {
+                        RCTLogError(@"Shader modifier must be string or dictionary with 'body' key");
+                        continue;
+                    }
+                    
+                    VROShaderEntryPoint entryPoint = [self convertEntryPoint:entryPointName];
+                    NSArray *lines = [modifierCode componentsSeparatedByString:@"\n"];
+                    std::vector<std::string> linesVec;
+                    for (NSString *line in lines) {
+                        linesVec.push_back(std::string([line UTF8String]));
+                    }
+                    
+                    auto modifier = std::make_shared<VROShaderModifier>(entryPoint, linesVec);
+                    vroMaterial->addShaderModifier(modifier);
+                }
+            } else if ([@"materialUniforms" caseInsensitiveCompare:materialPropertyName] == NSOrderedSame ||
+                       [@"shaderUniforms" caseInsensitiveCompare:materialPropertyName] == NSOrderedSame) {
+                id uniformsData = material[key];
+                
+                if ([uniformsData isKindOfClass:[NSArray class]]) {
+                    NSArray *uniforms = (NSArray *)uniformsData;
+                    for (NSDictionary *uniform in uniforms) {
+                        NSString *name = uniform[@"name"];
+                        NSString *type = uniform[@"type"];
+                        id value = uniform[@"value"];
+                        [self setUniformForMaterial:vroMaterial name:name type:type value:value];
+                    }
+                } else if ([uniformsData isKindOfClass:[NSDictionary class]]) {
+                    NSDictionary *uniforms = (NSDictionary *)uniformsData;
+                    for (NSString *name in uniforms) {
+                        NSDictionary *uniform = uniforms[name];
+                        NSString *type = uniform[@"type"];
+                        id value = uniform[@"value"];
+                        [self setUniformForMaterial:vroMaterial name:name type:type value:value];
+                    }
+                }
             }
         }
     }
     return materialWrapper;
+}
+
+- (void)setUniformForMaterial:(std::shared_ptr<VROMaterial>)vroMaterial
+                         name:(NSString *)name
+                         type:(NSString *)type
+                        value:(id)value {
+    if ([type isEqualToString:@"float"]) {
+        float floatValue = [value floatValue];
+        vroMaterial->setShaderUniform(std::string([name UTF8String]), floatValue);
+    } else if ([type isEqualToString:@"vec3"] || [type isEqualToString:@"vec4"]) {
+        NSArray *arr = (NSArray *)value;
+        if (arr.count == 3) {
+            vroMaterial->setShaderUniform(std::string([name UTF8String]), VROVector3f([arr[0] floatValue], [arr[1] floatValue], [arr[2] floatValue]));
+        } else if (arr.count == 4) {
+            vroMaterial->setShaderUniform(std::string([name UTF8String]), VROVector4f([arr[0] floatValue], [arr[1] floatValue], [arr[2] floatValue], [arr[3] floatValue]));
+        }
+    } else if ([type isEqualToString:@"mat4"]) {
+        // TODO: parse matrix
+    }
 }
 
 - (void) setPbrPropertyForMaterial:(VROMaterialVisual &)materialVisual
@@ -458,6 +568,21 @@ RCT_EXPORT_METHOD(deleteMaterials:(NSArray *)materials) {
     }
     //return default if nothing else matches
     return VROLightingModel::Blinn;
+}
+
+- (VROShaderEntryPoint)convertEntryPoint:(NSString *)name {
+    if ([@"geometry" caseInsensitiveCompare:name] == NSOrderedSame) {
+        return VROShaderEntryPoint::Geometry;
+    } else if ([@"vertex" caseInsensitiveCompare:name] == NSOrderedSame) {
+        return VROShaderEntryPoint::Vertex;
+    } else if ([@"surface" caseInsensitiveCompare:name] == NSOrderedSame) {
+        return VROShaderEntryPoint::Surface;
+    } else if ([@"fragment" caseInsensitiveCompare:name] == NSOrderedSame) {
+        return VROShaderEntryPoint::Fragment;
+    } else if ([@"lightingModel" caseInsensitiveCompare:name] == NSOrderedSame) {
+        return VROShaderEntryPoint::LightingModel;
+    }
+    return VROShaderEntryPoint::Fragment;
 }
 
 - (VROFilterMode)convertFilterMode:(NSString *)name {
@@ -620,7 +745,7 @@ RCT_EXPORT_METHOD(deleteMaterials:(NSArray *)materials) {
     MaterialWrapper *materialWrapper = _materialDictionary[materialName];
     NSDictionary *videoTextureDict = [materialWrapper getVideoTextures];
     if ([videoTextureDict count] == 0) {
-        NSLog(@"Warning: VRTMaterialManager: No video textures found for mat name: %@", materialName);
+        RCTLogWarn(@"No video textures found for material: %@", materialName);
         return;
     }
     
@@ -631,7 +756,6 @@ RCT_EXPORT_METHOD(deleteMaterials:(NSArray *)materials) {
         NSURL *videoURL = imageSource.request.URL;
         std::string url = std::string([[videoURL description] UTF8String]);
         videoTexture->loadVideo(url, context->getFrameSynchronizer(), driver);
-        NSLog(@"VRTMaterialManager: Updating video texture, %p for mat name: %@", videoTexture.get(), materialName);
         // update video texture listeners.
         WeakMaterialChangeListenerContainer *weakMaterialChangeListener = _materialChangeListeners[materialName];
     if (weakMaterialChangeListener != nil && weakMaterialChangeListener.listener != nil) {
@@ -680,6 +804,30 @@ RCT_EXPORT_METHOD(deleteMaterials:(NSArray *)materials) {
         return uiImageWrapper.image;
     }
     return nil;
+}
+
+#pragma mark - Memory Management
+
+// Called when React Native bridge is invalidated
+- (void)invalidate {
+    [self clearAllMaterials];
+}
+
+// Dealloc to ensure cleanup if module is deallocated
+- (void)dealloc {
+    // Clear all caches to release GPU memory
+    // RAII will handle cleanup of materials and textures
+    [_materialDictionary removeAllObjects];
+    _materialDictionary = nil;
+
+    [_imageDictionary removeAllObjects];
+    _imageDictionary = nil;
+
+    [_materialChangeListeners removeAllObjects];
+    _materialChangeListeners = nil;
+
+    [_materials removeAllObjects];
+    _materials = nil;
 }
 
 @end

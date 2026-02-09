@@ -30,6 +30,7 @@
 #import "VRTARSceneNavigator.h"
 #import <React/RCTUIManagerUtils.h>
 #import "VRTUtils.h"
+#import <CoreLocation/CoreLocation.h>
 
 @implementation VRTARSceneNavigatorModule
 @synthesize bridge = _bridge;
@@ -902,19 +903,29 @@ RCT_EXPORT_METHOD(getGeospatialSetupStatus:(nonnull NSNumber *)reactTag
 RCT_EXPORT_METHOD(cleanup:(nonnull NSNumber *)reactTag) {
     // This method is called from componentWillUnmount to ensure proper cleanup
     // of AR resources before the native view is deallocated.
+
     [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager,
                                         NSDictionary<NSNumber *, UIView *> *viewRegistry) {
         @try {
             VRTView *view = (VRTView *)viewRegistry[reactTag];
             if ([view isKindOfClass:[VRTARSceneNavigator class]]) {
                 VRTARSceneNavigator *component = (VRTARSceneNavigator *)view;
+
                 // Trigger explicit cleanup to prevent memory leaks
                 // This ensures ARSession is paused and GL resources are released
                 // even if willMoveToSuperview: is not called (e.g., in Fabric)
                 [component cleanupViroResources];
+
+                // Force removal from superview to trigger deallocation
+                if (component.superview) {
+                    [component removeFromSuperview];
+                }
+
+                // Try to manually call invalidate
+                [component invalidate];
             }
         } @catch (NSException *exception) {
-            NSLog(@"VRTARSceneNavigatorModule: Error during cleanup: %@", exception.reason);
+            NSLog(@"ERROR during cleanup: %@", exception.reason);
         }
     }];
 }

@@ -300,16 +300,19 @@
 }
 
 - (void)willMoveToSuperview:(UIView *)newSuperview {
-    // If newSuperview is nil, the view is being removed
     if (newSuperview == nil) {
+        // View is being removed
         [self cleanupViroResources];
-        
+
         // Critical: Clear pointer interactions to prevent crashes
         @try {
             self.interactions = @[];
         } @catch (NSException *exception) {
             NSLog(@"Error clearing interactions: %@", exception.reason);
         }
+    } else {
+        // View is being added - reset cleanup flag for potential reuse (Paper architecture)
+        _hasCleanedUp = NO;
     }
     [super willMoveToSuperview:newSuperview];
 }
@@ -321,7 +324,32 @@
     }
     _hasCleanedUp = YES;
 
+    // CRITICAL: Clear currentViews to break retain cycle
+    if (_currentViews) {
+        [_currentViews removeAllObjects];
+        _currentViews = nil;
+    }
+
+    // Clear event blocks
+    _onExitViro = nil;
+    _onWorldMeshUpdated = nil;
+
+    // Clear current scene
+    _currentScene = nil;
+
+    // Clear bridge reference (was strong, creating cycle)
+    if (_bridge) {
+        VRTMaterialManager *materialManager = [_bridge materialManager];
+        [materialManager clearAllMaterials];
+        _bridge = nil;
+    }
+
     [self parentDidDisappear];
+
+    // Clear render delegate to break potential cycles
+    if (_vroView) {
+        _vroView.renderDelegate = nil;
+    }
 
     if (_vroView) {
         VROViewAR *viewAR = (VROViewAR *)_vroView;
