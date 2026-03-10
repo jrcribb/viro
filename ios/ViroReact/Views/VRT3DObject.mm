@@ -214,7 +214,8 @@
             [strongSelf setMorphTargets:strongSelf->_morphTargets];
 
             if (strongSelf.materials) {
-                // Apply materials recursively to all child geometries in the loaded model
+                // Apply materials recursively so child geometry nodes (sub-meshes) of the model
+                // also receive the rendering properties, but textures are preserved via merge logic.
                 [strongSelf applyMaterialsRecursive:YES];
             }
 

@@ -14,6 +14,7 @@ flat in int v_instance_id;
 in lowp mat3 v_tbn;
 in highp vec2 v_texcoord;
 in highp vec3 v_surface_position;
+#pragma varying_in_declarations
 
 layout (location = 0) out highp vec4 frag_color;
 
@@ -30,7 +31,6 @@ void main() {
 
     highp vec4 _output_color = vec4(_surface.diffuse_color.xyz * _surface.diffuse_intensity, _surface.alpha * _surface.diffuse_color.a);
 
-    // Alpha masking: discard fragments below the cutoff threshold
     if (material_alpha_cutoff > 0.0 && _output_color.a < material_alpha_cutoff) {
         discard;
     }

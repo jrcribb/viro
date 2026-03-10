@@ -2059,7 +2059,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "VIROREACT_DIST_PATH=${SRCROOT}/dist/\nVIRO_DEVICE_LIBRARY=$VIROREACT_DIST_PATH/armv7_arm64\nVIRO_SIMULATOR_LIBRARY=$VIROREACT_DIST_PATH/x86_64\n\n# Copy the static library (device or simulator) to dist folder\nif [ ${PLATFORM_NAME} = \"iphonesimulator\" ]; then\nmkdir -p $VIRO_SIMULATOR_LIBRARY\ncp -r $TARGET_BUILD_DIR/libViroReact.a $VIRO_SIMULATOR_LIBRARY\nelse\nmkdir -p $VIRO_DEVICE_LIBRARY\ncp -r $TARGET_BUILD_DIR/libViroReact.a $VIRO_DEVICE_LIBRARY\nfi\n\n# If both the device and simulator frameworks now exist, create the Universal framework\nif [ -f $VIRO_DEVICE_LIBRARY/libViroReact.a ] && [ -f $VIRO_SIMULATOR_LIBRARY/libViroReact.a ]; then\nlipo $VIRO_SIMULATOR_LIBRARY/libViroReact.a $VIRO_DEVICE_LIBRARY/libViroReact.a -create -output $VIROREACT_DIST_PATH/lib/libViroReact.a\nfi\n";
+			shellScript = "VIROREACT_DIST_PATH=${SRCROOT}/dist/\n\nmkdir -p $VIROREACT_DIST_PATH/lib\ncp -r $TARGET_BUILD_DIR/libViroReact.a $VIROREACT_DIST_PATH/lib/libViroReact.a\n";
 		};
 		EDCFBBED88237D1EB61CD28B /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;

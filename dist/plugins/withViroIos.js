@@ -22,8 +22,12 @@ const withViroPods = (config) => {
                 const pluginConfig = config?.plugins?.find((plugin) => Array.isArray(plugin) && plugin[0] === "@reactvision/react-viro");
                 if (Array.isArray(pluginConfig) && pluginConfig.length > 1) {
                     const options = pluginConfig[1];
-                    cloudAnchorProvider = options.cloudAnchorProvider;
-                    geospatialAnchorProvider = options.geospatialAnchorProvider;
+                    // Resolve unified provider prop; old props override for backward compat.
+                    // Default to "reactvision" only when rvApiKey is present (implies RV intent).
+                    const defaultProvider = options.rvApiKey ? "reactvision" : undefined;
+                    const legacyOpts = options;
+                    cloudAnchorProvider = legacyOpts.cloudAnchorProvider ?? options.provider ?? defaultProvider;
+                    geospatialAnchorProvider = legacyOpts.geospatialAnchorProvider ?? options.provider ?? defaultProvider;
                     iosLinkage = options.iosLinkage;
                     includeARCore = options.ios?.includeARCore;
                 }
@@ -161,6 +165,8 @@ const withDefaultInfoPlist = (config, _props) => {
     let microphoneUsagePermission = withViro_1.DEFAULTS.ios.microphoneUsagePermission;
     let locationUsagePermission = withViro_1.DEFAULTS.ios.locationUsagePermission;
     let googleCloudApiKey;
+    let rvApiKey;
+    let rvProjectId;
     let cloudAnchorProvider;
     let geospatialAnchorProvider;
     let includeARCore;
@@ -178,8 +184,14 @@ const withDefaultInfoPlist = (config, _props) => {
             locationUsagePermission =
                 pluginOptions.ios?.locationUsagePermission || locationUsagePermission;
             googleCloudApiKey = pluginOptions.googleCloudApiKey;
-            cloudAnchorProvider = pluginOptions.cloudAnchorProvider;
-            geospatialAnchorProvider = pluginOptions.geospatialAnchorProvider;
+            rvApiKey = pluginOptions.rvApiKey;
+            rvProjectId = pluginOptions.rvProjectId;
+            // Resolve unified provider prop; old props override for backward compat.
+            // Default to "reactvision" only when rvApiKey is present (implies RV intent).
+            const defaultProvider2 = pluginOptions.rvApiKey ? "reactvision" : undefined;
+            const legacyOpts2 = pluginOptions;
+            cloudAnchorProvider = legacyOpts2.cloudAnchorProvider ?? pluginOptions.provider ?? defaultProvider2;
+            geospatialAnchorProvider = legacyOpts2.geospatialAnchorProvider ?? pluginOptions.provider ?? defaultProvider2;
             includeARCore = pluginOptions.ios?.includeARCore;
         }
     }
@@ -201,8 +213,15 @@ const withDefaultInfoPlist = (config, _props) => {
     if (googleCloudApiKey) {
         config.ios.infoPlist.GARAPIKey = googleCloudApiKey;
     }
+    // Add ReactVision credentials for ReactVision Cloud Anchors and Geospatial API (iOS)
+    if (rvApiKey) {
+        config.ios.infoPlist.RVApiKey = rvApiKey;
+    }
+    if (rvProjectId) {
+        config.ios.infoPlist.RVProjectId = rvProjectId;
+    }
     // Add location permissions for Geospatial API
-    if (geospatialAnchorProvider === "arcore" || includeARCore === true) {
+    if (geospatialAnchorProvider === "arcore" || geospatialAnchorProvider === "reactvision" || includeARCore === true) {
         config.ios.infoPlist.NSLocationWhenInUseUsageDescription =
             config.ios.infoPlist.NSLocationWhenInUseUsageDescription || locationUsagePermission;
         config.ios.infoPlist.NSLocationAlwaysAndWhenInUseUsageDescription =

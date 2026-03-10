@@ -67,6 +67,8 @@ import {
   polarToCartesianActual,
   isARSupportedOnDevice,
   ViroARSupportResponse,
+  latLngToMercator,
+  gpsToArWorld,
 } from "./components/Utilities/ViroUtils";
 import { ViroARCamera } from "./components/AR/ViroARCamera";
 import {
@@ -129,6 +131,8 @@ import {
   ViroPinchStateTypes,
   ViroClickStateTypes,
   ViroRotateStateTypes,
+  // Provider Types
+  ViroProvider,
   // Cloud Anchor Types
   ViroCloudAnchorState,
   ViroCloudAnchorProvider,
@@ -215,6 +219,8 @@ export {
   polarToCartesian,
   polarToCartesianActual,
   isARSupportedOnDevice,
+  latLngToMercator,
+  gpsToArWorld,
   // Types
   ViroARSupportResponse,
   ViroHoverEvent,
@@ -283,6 +289,8 @@ export {
   ViroShaderUniform,
   ViroShaderModifier,
   VIRO_VERSION,
+  // Provider Types
+  ViroProvider,
   // Cloud Anchor Types
   ViroCloudAnchorState,
   ViroCloudAnchorProvider,
