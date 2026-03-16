@@ -66,7 +66,9 @@ import {
   polarToCartesian,
   polarToCartesianActual,
   isARSupportedOnDevice,
+  requestRequiredPermissions,
   ViroARSupportResponse,
+  ViroPermissionsResult,
   latLngToMercator,
   gpsToArWorld,
 } from "./components/Utilities/ViroUtils";
@@ -219,10 +221,12 @@ export {
   polarToCartesian,
   polarToCartesianActual,
   isARSupportedOnDevice,
+  requestRequiredPermissions,
   latLngToMercator,
   gpsToArWorld,
   // Types
   ViroARSupportResponse,
+  ViroPermissionsResult,
   ViroHoverEvent,
   ViroClickEvent,
   ViroClickStateEvent,

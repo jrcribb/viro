@@ -25,10 +25,106 @@
 //
 
 #import "VRTARUtils.h"
+#import <AVFoundation/AVFoundation.h>
+#import <CoreLocation/CoreLocation.h>
+#import <Photos/Photos.h>
 
-@implementation VRTARUtils
+// Delegate that resolves a completion block once CLLocationManager reports a determined status.
+@interface ViroLocationRequestDelegate : NSObject <CLLocationManagerDelegate>
+@property (nonatomic, copy) void (^completion)(BOOL granted);
+@end
+
+@implementation ViroLocationRequestDelegate
+- (void)locationManager:(CLLocationManager *)manager didChangeAuthorizationStatus:(CLAuthorizationStatus)status {
+    if (status == kCLAuthorizationStatusNotDetermined) return;
+    if (self.completion) {
+        self.completion(status == kCLAuthorizationStatusAuthorizedWhenInUse ||
+                        status == kCLAuthorizationStatusAuthorizedAlways);
+        self.completion = nil;
+    }
+}
+@end
+
+@implementation VRTARUtils {
+    CLLocationManager *_locationManager;
+    ViroLocationRequestDelegate *_locationDelegate;
+}
 
 RCT_EXPORT_MODULE();
+
+RCT_EXPORT_METHOD(requestRequiredPermissions:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject)
+{
+    dispatch_group_t group = dispatch_group_create();
+    __block BOOL cameraGranted = NO;
+    __block BOOL micGranted = NO;
+    __block BOOL storageGranted = NO;
+    __block BOOL locationGranted = NO;
+
+    // Camera
+    AVAuthorizationStatus camStatus = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo];
+    if (camStatus == AVAuthorizationStatusAuthorized) {
+        cameraGranted = YES;
+    } else if (camStatus == AVAuthorizationStatusNotDetermined) {
+        dispatch_group_enter(group);
+        [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
+            cameraGranted = granted;
+            dispatch_group_leave(group);
+        }];
+    }
+
+    // Microphone
+    AVAuthorizationStatus micStatus = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeAudio];
+    if (micStatus == AVAuthorizationStatusAuthorized) {
+        micGranted = YES;
+    } else if (micStatus == AVAuthorizationStatusNotDetermined) {
+        dispatch_group_enter(group);
+        [AVCaptureDevice requestAccessForMediaType:AVMediaTypeAudio completionHandler:^(BOOL granted) {
+            micGranted = granted;
+            dispatch_group_leave(group);
+        }];
+    }
+
+    // Photo library (storage for saving recordings/screenshots)
+    PHAuthorizationStatus photoStatus = [PHPhotoLibrary authorizationStatus];
+    if (photoStatus == PHAuthorizationStatusAuthorized) {
+        storageGranted = YES;
+    } else if (photoStatus == PHAuthorizationStatusNotDetermined) {
+        dispatch_group_enter(group);
+        [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
+            storageGranted = (status == PHAuthorizationStatusAuthorized);
+            dispatch_group_leave(group);
+        }];
+    }
+
+    // Location
+    _locationManager = [[CLLocationManager alloc] init];
+    CLAuthorizationStatus locStatus = [CLLocationManager authorizationStatus];
+    if (locStatus == kCLAuthorizationStatusAuthorizedWhenInUse ||
+        locStatus == kCLAuthorizationStatusAuthorizedAlways) {
+        locationGranted = YES;
+    } else if (locStatus == kCLAuthorizationStatusNotDetermined) {
+        dispatch_group_enter(group);
+        _locationDelegate = [[ViroLocationRequestDelegate alloc] init];
+        _locationDelegate.completion = ^(BOOL granted) {
+            locationGranted = granted;
+            dispatch_group_leave(group);
+        };
+        _locationManager.delegate = _locationDelegate;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self->_locationManager requestWhenInUseAuthorization];
+        });
+    }
+
+    dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+        resolve(@{
+            @"camera":     @(cameraGranted),
+            @"microphone": @(micGranted),
+            @"storage":    @(storageGranted),
+            @"location":   @(locationGranted),
+        });
+    });
+}
 
 RCT_EXPORT_METHOD(isARSupported:(RCTResponseSenderBlock)callback)
 {

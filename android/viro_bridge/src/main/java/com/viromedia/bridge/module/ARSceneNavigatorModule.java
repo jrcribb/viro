@@ -75,6 +75,7 @@ public class ARSceneNavigatorModule extends ReactContextBaseJavaModule {
     private static final String RECORDING_ERROR_KEY = "errorCode";
     private static final int PERMISSION_REQ_CODE_AUDIO = 1;
     private static final int PERMISSION_REQ_CODE_STORAGE = 2;
+    private static final int PERMISSION_REQ_CODE_CAMERA = 3;
 
     private ReactApplicationContext mContext;
     // https://stackoverflow.com/a/44879687
@@ -1888,6 +1889,56 @@ public class ARSceneNavigatorModule extends ReactContextBaseJavaModule {
         anchorData.putArray("position", position);
 
         return anchorData;
+    }
+
+    @ReactMethod
+    public void requestRequiredPermissions(final Promise promise) {
+        final String[] required = {
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+        };
+
+        boolean allGranted = true;
+        for (String perm : required) {
+            if (ContextCompat.checkSelfPermission(mContext, perm) != 0) {
+                allGranted = false;
+                break;
+            }
+        }
+        if (allGranted) {
+            promise.resolve(buildPermissionsResult());
+            return;
+        }
+
+        Activity activity = mContext.getCurrentActivity();
+        if (activity == null) {
+            promise.reject("E_NO_ACTIVITY", "No current activity available");
+            return;
+        }
+        if (!(activity instanceof ReactActivity)) {
+            promise.reject("E_NO_REACT_ACTIVITY", "Missing ReactActivity for requesting permissions");
+            return;
+        }
+
+        ((ReactActivity) activity).requestPermissions(required, PERMISSION_REQ_CODE_CAMERA, new PermissionListener() {
+            @Override
+            public boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+                if (requestCode != PERMISSION_REQ_CODE_CAMERA) return false;
+                promise.resolve(buildPermissionsResult());
+                return true;
+            }
+        });
+    }
+
+    private WritableMap buildPermissionsResult() {
+        WritableMap result = Arguments.createMap();
+        result.putBoolean("camera", ContextCompat.checkSelfPermission(mContext, Manifest.permission.CAMERA) == 0);
+        result.putBoolean("microphone", ContextCompat.checkSelfPermission(mContext, Manifest.permission.RECORD_AUDIO) == 0);
+        result.putBoolean("storage", ContextCompat.checkSelfPermission(mContext, Manifest.permission.WRITE_EXTERNAL_STORAGE) == 0);
+        result.putBoolean("location", ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION) == 0);
+        return result;
     }
 
     private void checkPermissionsAndRun(PermissionListener listener, boolean audioAndRecordingPerm){

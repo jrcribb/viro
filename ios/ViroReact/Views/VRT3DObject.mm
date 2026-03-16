@@ -109,11 +109,6 @@
 }
 
 - (void)setResources:(NSArray *)resources {
-    NSLog(@"[VRX DEBUG] setResources called with %lu resources", (unsigned long)resources.count);
-    for (int i = 0; i < resources.count; i++) {
-        NSDictionary *resource = resources[i];
-        NSLog(@"[VRX DEBUG]   Resource %d: %@", i, resource);
-    }
     _resources = resources;
     _sourceChanged = YES;
 }
@@ -123,7 +118,9 @@
     if (!_modelLoaded){
         return;
     }
-    
+
+    std::set<std::shared_ptr<VROMorpher>> allMorphers = self.node->getMorphers(true);
+
     for (NSDictionary *target in morphTargets) {
         // Grab the target key and values
         NSObject *targetObject = [target objectForKey:@"target"];
@@ -134,9 +131,8 @@
         NSString *key = (NSString *) targetObject;
         float value = [[target objectForKey:@"weight"] floatValue];
         std::string targetStr = std::string([key UTF8String]);
-        
-        std::set<std::shared_ptr<VROMorpher>> morphers = self.node->getMorphers(true);
-        for (auto morph : morphers) {
+
+        for (auto morph : allMorphers) {
             morph->setWeightForTarget(targetStr, value);
         }
     }

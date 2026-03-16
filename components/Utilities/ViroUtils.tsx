@@ -136,6 +136,25 @@ export function gpsToArWorld(
   ];
 }
 
+export interface ViroPermissionsResult {
+  camera: boolean;
+  microphone: boolean;
+  storage: boolean;
+  location: boolean;
+}
+
+/**
+ * Check and request the permissions required for Viro AR to function (camera access).
+ * Resolves with `{ granted: true }` if camera permission is granted, `{ granted: false }` if denied.
+ */
+export function requestRequiredPermissions(): Promise<ViroPermissionsResult> {
+  if (Platform.OS === "ios") {
+    return NativeModules.VRTARUtils.requestRequiredPermissions();
+  } else {
+    return NativeModules.VRTARSceneNavigatorModule.requestRequiredPermissions();
+  }
+}
+
 export interface ViroiOSArSupportResponse {
   isARSupported: boolean;
 }
