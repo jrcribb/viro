@@ -319,7 +319,21 @@ public:
      texture are updated after each call to updateFrame().
      */
     virtual std::shared_ptr<VROTexture> getCameraBackgroundTexture() = 0;
-    
+
+    /*
+     Get the semantic texture for the current frame. Each pixel is a VROSemanticLabel
+     value (0-11, R8 format). Returns nullptr if semantic mode is not enabled or
+     the platform does not support it.
+     */
+    virtual std::shared_ptr<VROTexture> getSemanticTexture() { return nullptr; }
+
+    /*
+     Get the confidence texture for the current frame. Each pixel is a confidence value
+     (R8, 0=uncertain, 255=certain) corresponding to the label in getSemanticTexture().
+     Returns nullptr if not supported; callers should substitute a 1×1 white texture.
+     */
+    virtual std::shared_ptr<VROTexture> getSemanticConfidenceTexture() { return nullptr; }
+
     /*
      Invoke when the viewport changes. The AR engine may adjust its camera
      background and projection matrices in response to a viewport change.
@@ -556,6 +570,11 @@ public:
         const std::string& platform, const std::string& externalUserId,
         std::function<void(bool success, std::string error)> callback) {
         if (callback) callback(false, "Not supported");
+    }
+    virtual void rvGetSceneAssets(
+        const std::string& sceneId,
+        std::function<void(bool success, std::string jsonData, std::string error)> callback) {
+        if (callback) callback(false, "", "Not supported");
     }
 
     // ========================================================================
