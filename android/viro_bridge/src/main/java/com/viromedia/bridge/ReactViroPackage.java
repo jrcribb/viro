@@ -84,6 +84,7 @@ import com.viromedia.bridge.module.SceneNavigatorModule;
 import com.viromedia.bridge.module.PerfMonitor;
 import com.viromedia.bridge.module.SoundModule;
 import com.viromedia.bridge.module.VRT3DSceneNavigatorModule;
+import com.viromedia.bridge.module.VRModuleOpenXR;
 import com.viromedia.bridge.module.VRTImageModule;
 
 import java.util.Arrays;
@@ -96,7 +97,7 @@ public class ReactViroPackage implements ReactPackage {
     public static final String ON_EXIT_VIRO_BROADCAST ="com.viromedia.bridge.broadcast.OnExitViro";
 
     public enum ViroPlatform {
-        GVR, OVR_MOBILE, AR
+        GVR, OVR_MOBILE, AR, QUEST
     }
 
     private final ViroPlatform mViroPlatform;
@@ -122,7 +123,8 @@ public class ReactViroPackage implements ReactPackage {
                 new ARSceneModule(reactContext),
                 new ARSceneNavigatorModule(reactContext),
                 new ARTrackingTargetsModule(reactContext),
-                new VRT3DSceneNavigatorModule(reactContext)
+                new VRT3DSceneNavigatorModule(reactContext),
+                new VRModuleOpenXR(reactContext)
         );
     }
 
