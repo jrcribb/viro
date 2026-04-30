@@ -45,6 +45,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ViroARPlaneSelector = void 0;
 const React = __importStar(require("react"));
+const ViroPlatform_1 = require("../Utilities/ViroPlatform");
 const ViroMaterials_1 = require("../Material/ViroMaterials");
 const ViroNode_1 = require("../ViroNode");
 const ViroQuad_1 = require("../ViroQuad");
@@ -284,6 +285,10 @@ class ViroARPlaneSelector extends React.Component {
     // Render
     // ---------------------------------------------------------------------------
     render() {
+        if (ViroPlatform_1.isQuest) {
+            console.warn("[Viro] ViroARPlaneSelector is not supported on Quest and will not render.");
+            return null;
+        }
         return <ViroNode_1.ViroNode>{this._renderPlanes()}</ViroNode_1.ViroNode>;
     }
     _renderPlanes() {

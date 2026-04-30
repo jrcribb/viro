@@ -1,5 +1,6 @@
 import { Alert } from "react-native";
 import { StudioAnimation, StudioSceneFunction, StudioSceneResponse } from "../types";
+import { VRTStudioModule } from "../VRTStudioModule";
 
 type SceneNavigator = any; // ViroARSceneNavigator navigator object passed to AR scenes
 
@@ -117,12 +118,12 @@ async function navigateToScene(
   console.log(`[Studio] Navigating to scene: ${targetSceneId}`);
 
   try {
-    const result = await sceneNavigator.rvGetScene(targetSceneId);
+    const result = await VRTStudioModule.rvGetScene(targetSceneId);
     if (!result?.success) {
       throw new Error(result?.error ?? "rvGetScene failed");
     }
 
-    const sceneData: StudioSceneResponse = JSON.parse(result.data);
+    const sceneData: StudioSceneResponse = JSON.parse(result.data!);
 
     // Lazy import to avoid circular dependency
     const { StudioARScene } = require("../StudioARScene");

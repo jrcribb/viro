@@ -42,7 +42,9 @@ const ViroARImageMarker_1 = require("../AR/ViroARImageMarker");
 const ViroARPlane_1 = require("../AR/ViroARPlane");
 const ViroARPlaneSelector_1 = require("../AR/ViroARPlaneSelector");
 const ViroARScene_1 = require("../AR/ViroARScene");
+const ViroScene_1 = require("../ViroScene");
 const ViroText_1 = require("../ViroText");
+const ViroPlatform_1 = require("../Utilities/ViroPlatform");
 const animationRegistry_1 = require("./domain/animationRegistry");
 const collisionBindingsRuntime_1 = require("./domain/collisionBindingsRuntime");
 const collisionPairKey_1 = require("./domain/collisionPairKey");
@@ -56,30 +58,28 @@ const physicsConfig_1 = require("./domain/physicsConfig");
 const ANDROID_MAX_3D_MODELS = 3;
 const IOS_MAX_3D_MODELS = 10;
 /**
- * AR scene component driven by a StudioSceneResponse.
- * Passed as `scene` to ViroARSceneNavigator.initialScene and also
- * to sceneNavigator.push() when navigating between scenes.
+ * Outer gate: keeps the hooks-bearing inner component out of the tree until
+ * sceneData is available, avoiding a Rules of Hooks violation.
  */
 const StudioARScene = (props) => {
+    if (!props.sceneData) {
+        return ViroPlatform_1.isQuest ? <ViroScene_1.ViroScene /> : <ViroARScene_1.ViroARScene />;
+    }
+    return <StudioARSceneInner {...props} sceneData={props.sceneData}/>;
+};
+exports.StudioARScene = StudioARScene;
+const StudioARSceneInner = (props) => {
     const { sceneNavigator, sceneData, onReady, onSceneChange } = props;
-    // Guard: sceneData may be null during the brief push animation.
-    if (!sceneData)
-        return <ViroARScene_1.ViroARScene />;
     const { scene, assets, animations, collision_bindings, functions } = sceneData;
     // ─── Material registration ────────────────────────────────────────────────
-    // Must run synchronously before first render so shaderOverrides resolve.
     const materialsRegisteredRef = (0, react_1.useRef)(false);
     if (!materialsRegisteredRef.current) {
         (0, studioMaterials_1.registerStudioMaterialsForAssets)(assets);
         materialsRegisteredRef.current = true;
     }
-    // Drive `time` uniform for animated shader presets (~60fps).
     (0, useStudioShaderTimeUniforms_1.useStudioShaderTimeUniforms)(assets);
-    // Push _rf_vpw / _rf_vph viewport uniforms for shaders sampling the camera feed.
     (0, useStudioShaderViewportUniforms_1.useStudioShaderViewportUniforms)(assets);
     // ─── Animation registration ───────────────────────────────────────────────
-    // Done synchronously at render time so the registry is populated before
-    // any Viro component reads the animation prop.
     const registeredKeyRef = (0, react_1.useRef)(null);
     const animationsKey = animations.map((a) => a.animation_key).join(",");
     if (animations.length > 0 && registeredKeyRef.current !== animationsKey) {
@@ -99,12 +99,8 @@ const StudioARScene = (props) => {
             triggerRafsRef.current.clear();
         };
     }, []);
-    /** Two-step rAF animation trigger: set run:false then run:true on next frame. */
     const triggerAnimation = (0, react_1.useCallback)((targetAssetId, animationKey) => {
-        setAnimOverrides((prev) => ({
-            ...prev,
-            [targetAssetId]: { key: animationKey, run: false },
-        }));
+        setAnimOverrides((prev) => ({ ...prev, [targetAssetId]: { key: animationKey, run: false } }));
         const rafId = requestAnimationFrame(() => {
             triggerRafsRef.current.delete(rafId);
             setAnimOverrides((prev) => {
@@ -121,7 +117,6 @@ const StudioARScene = (props) => {
     // ─── Computed animation props per asset ──────────────────────────────────
     const animationStates = (0, react_1.useMemo)(() => {
         const states = {};
-        // Group animations by target asset
         const animsByAsset = new Map();
         for (const anim of animations) {
             const list = animsByAsset.get(anim.target_asset_id) ?? [];
@@ -201,6 +196,12 @@ const StudioARScene = (props) => {
     const [urlToTargetName, setUrlToTargetName] = (0, react_1.useState)(() => new Map());
     const prevTargetNamesRef = (0, react_1.useRef)([]);
     (0, react_1.useEffect)(() => {
+        if (ViroPlatform_1.isQuest) {
+            if (imageTriggeredAssets.length > 0) {
+                console.warn("[Studio] Image-triggered assets are not supported on Quest — skipping.");
+            }
+            return;
+        }
         if (imageTriggeredAssets.length === 0) {
             (0, triggerImageRegistry_1.cleanupTriggerImageTargets)(prevTargetNamesRef.current);
             prevTargetNamesRef.current = [];
@@ -217,9 +218,7 @@ const StudioARScene = (props) => {
         };
     }, [imageTriggeredAssets]);
     // ─── Ready callback ───────────────────────────────────────────────────────
-    (0, react_1.useEffect)(() => {
-        onReady?.();
-    }, []);
+    (0, react_1.useEffect)(() => { onReady?.(); }, []);
     // ─── Render helpers ───────────────────────────────────────────────────────
     const maxModels = react_native_1.Platform.OS === "android" ? ANDROID_MAX_3D_MODELS : IOS_MAX_3D_MODELS;
     const renderedPlaneAssets = (0, react_1.useMemo)(() => {
@@ -233,25 +232,19 @@ const StudioARScene = (props) => {
                     return null;
                 }
             }
-            return (0, viroNodeFactory_1.createNode)(asset, sceneNavigator, animations, scene, (id, key) => triggerAnimationRef.current(id, key), animationStates, handleAssetLoaded);
+            return (0, viroNodeFactory_1.createNode)(asset, sceneNavigator, animations, scene, (id, key) => triggerAnimationRef.current(id, key), animationStates, handleAssetLoaded, getCollisionHandler(asset.id));
         })
             .filter(Boolean);
-    }, [
-        planeAssets,
-        sceneNavigator,
-        animations,
-        animationStates,
-        handleAssetLoaded,
-        getCollisionHandler,
-        maxModels,
-    ]);
+    }, [planeAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler, maxModels]);
     const renderedImageTriggeredAssets = (0, react_1.useMemo)(() => {
+        if (ViroPlatform_1.isQuest)
+            return [];
         return imageTriggeredAssets
             .map((asset) => {
             const targetName = urlToTargetName.get(asset.trigger_image_url);
             if (!targetName)
                 return null;
-            const node = (0, viroNodeFactory_1.createNode)(asset, sceneNavigator, animations, scene, (id, key) => triggerAnimationRef.current(id, key), animationStates, handleAssetLoaded);
+            const node = (0, viroNodeFactory_1.createNode)(asset, sceneNavigator, animations, scene, (id, key) => triggerAnimationRef.current(id, key), animationStates, handleAssetLoaded, getCollisionHandler(asset.id));
             if (!node)
                 return null;
             return (<ViroARImageMarker_1.ViroARImageMarker key={asset.id} target={targetName}>
@@ -259,40 +252,44 @@ const StudioARScene = (props) => {
           </ViroARImageMarker_1.ViroARImageMarker>);
         })
             .filter(Boolean);
-    }, [
-        urlToTargetName,
-        imageTriggeredAssets,
-        sceneNavigator,
-        animations,
-        animationStates,
-        handleAssetLoaded,
-    ]);
-    // ─── Plane detection mode ─────────────────────────────────────────────────
+    }, [urlToTargetName, imageTriggeredAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler]);
+    // ─── Plane detection (AR only) ────────────────────────────────────────────
     const planeDetectionMode = (scene.plane_detection ?? "NONE").toUpperCase();
     const planeAlignment = (scene.plane_direction ?? "Horizontal");
+    const renderAssets = () => {
+        if (ViroPlatform_1.isQuest) {
+            if (planeDetectionMode !== "NONE") {
+                console.warn(`[Studio] Plane detection (${planeDetectionMode}) is not supported on Quest — rendering assets without plane anchor.`);
+            }
+            return <>{renderedPlaneAssets}</>;
+        }
+        if (planeDetectionMode === "AUTOMATIC") {
+            return (<ViroARPlane_1.ViroARPlane minHeight={0.1} minWidth={0.1} alignment={planeAlignment}>
+          {renderedPlaneAssets}
+        </ViroARPlane_1.ViroARPlane>);
+        }
+        if (planeDetectionMode === "MANUAL") {
+            return (<ViroARPlaneSelector_1.ViroARPlaneSelector minHeight={0.1} minWidth={0.1} alignment={planeAlignment}>
+          {renderedPlaneAssets}
+        </ViroARPlaneSelector_1.ViroARPlaneSelector>);
+        }
+        return <>{renderedPlaneAssets}</>;
+    };
     // ─── Physics world ────────────────────────────────────────────────────────
     const physicsWorldConfig = (0, physicsConfig_1.parsePhysicsWorldConfig)(scene.physics_world_config);
     const physicsWorld = physicsWorldConfig?.enabled
         ? (0, physicsConfig_1.buildViroPhysicsWorld)(physicsWorldConfig)
         : undefined;
+    const physicsProps = physicsWorld ? { physicsWorld: physicsWorld } : {};
     // ─── Render ───────────────────────────────────────────────────────────────
-    return (<ViroARScene_1.ViroARScene {...(physicsWorld ? { physicsWorld: physicsWorld } : {})}>
+    const children = (<>
       <ViroAmbientLight_1.ViroAmbientLight color="#ffffff" intensity={1000}/>
-
-      {planeDetectionMode === "AUTOMATIC" ? (<ViroARPlane_1.ViroARPlane minHeight={0.1} minWidth={0.1} alignment={planeAlignment}>
-          {renderedPlaneAssets}
-        </ViroARPlane_1.ViroARPlane>) : planeDetectionMode === "MANUAL" ? (<ViroARPlaneSelector_1.ViroARPlaneSelector minHeight={0.1} minWidth={0.1} alignment={planeAlignment}>
-          {renderedPlaneAssets}
-        </ViroARPlaneSelector_1.ViroARPlaneSelector>) : (<>{renderedPlaneAssets}</>)}
-
+      {renderAssets()}
       {renderedImageTriggeredAssets}
-
-      {assets.length === 0 && (<ViroText_1.ViroText text="No assets to display" position={[0, 0, -2]} style={{
-                fontFamily: "Arial",
-                fontSize: 16,
-                color: "#CCCCCC",
-                textAlign: "center",
-            }}/>)}
-    </ViroARScene_1.ViroARScene>);
+      {assets.length === 0 && (<ViroText_1.ViroText text="No assets to display" position={[0, 0, -2]} style={{ fontFamily: "Arial", fontSize: 16, color: "#CCCCCC", textAlign: "center" }}/>)}
+    </>);
+    if (ViroPlatform_1.isQuest) {
+        return <ViroScene_1.ViroScene {...physicsProps}>{children}</ViroScene_1.ViroScene>;
+    }
+    return <ViroARScene_1.ViroARScene {...physicsProps}>{children}</ViroARScene_1.ViroARScene>;
 };
-exports.StudioARScene = StudioARScene;

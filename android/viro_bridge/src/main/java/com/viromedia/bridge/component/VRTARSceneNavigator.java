@@ -1136,6 +1136,17 @@ public class VRTARSceneNavigator extends VRT3DSceneNavigator {
         arScene.rvFindNearbyCloudAnchors(lat, lng, radius, limit, callback);
     }
 
+    public void rvGetProject(ARScene.RvCloudAnchorCallback callback) {
+        ARScene arScene = getCurrentARScene();
+        if (arScene == null) { if (callback != null) callback.onResult(false, "", "AR scene not available"); return; }
+        if (mRvProjectId == null || mRvProjectId.isEmpty()) {
+            if (callback != null) callback.onResult(false, "", "com.reactvision.RVProjectId not set in AndroidManifest.xml");
+            return;
+        }
+        ensureRvConfigApplied(arScene);
+        arScene.rvGetProject(mRvProjectId, callback);
+    }
+
     public void rvGetScene(String sceneId, ARScene.RvCloudAnchorCallback callback) {
         ARScene arScene = getCurrentARScene();
         if (arScene == null) { if (callback != null) callback.onResult(false, "", "AR scene not available"); return; }

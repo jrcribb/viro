@@ -1,4 +1,3 @@
-
 <p align="center" style="background-colour: #CCCCCC;">
   <a href="https://www.reactvision.xyz/">
     <img src="https://avatars.githubusercontent.com/u/74572641?s=200&v=4" alt="ReactVision logo" width="120px" height="120px">
@@ -17,78 +16,118 @@
   </a>
 </p>
 
-<h1 align="center">ViroReact (ReactVision)</h1>
+# ViroReact, By ReactVision
 
-ViroReact is a library for building Augmented Reality (AR) and Virtual Reality (VR) experiences using React Native. Viro runs your code natively across mobile VR (including Google Daydream, Samsung Gear VR, and Google Cardboard on iOS and Android) and AR platforms (iOS ARKit and Android ARCore).
+ViroReact is the most widely used open-source library for building Augmented Reality (AR) and Virtual Reality (VR) experiences with React Native. Write your app once in TypeScript and ship it natively across mobile AR and VR headsets — no new engine, no new language, no months of ramp-up.
 
-<table>
-  <tr>
-    <td align="centre">
-      <img height="200" src="https://raw.githubusercontent.com/viromedia/viro/master/code-samples/js/ARCarDemo/viro_car_marker_demo.gif" alt="AR car demo">
-    </td>
-    <td align="centre">
-      <img height="200" src="https://github.com/ViroCommunity/viro/assets/430272/b153b8e4-7b40-4197-b05b-dd1eb1566102" alt="Viro example">
-    </td>
-  </tr>
-</table>
+ViroReact is MIT licensed and free forever.
+
+## Supported Platforms
+
+| Platform         | Support      |
+| ---------------- | ------------ |
+| iOS (ARKit)      | ✅ Supported |
+| Android (ARCore) | ✅ Supported |
+| Meta Horizon OS  | ✅ Supported |
+
+ViroReact works with both **React Native CLI** and **Expo** projects.
+
+## Installation
+
+```bash
+npm install @reactvision/react-viro
+```
+
+For Expo projects, the easiest way to start is to clone the official starter kit:
+
+- **Expo + TypeScript starter kit:** <https://github.com/ReactVision/expo-starter-kit-typescript>
+- **React Native CLI starter kit:** <https://github.com/ReactVision/starter-kit>
+
+For step-by-step setup instructions, including platform-specific permissions and build configuration, see the full installation guide in the docs: <https://viro-community.readme.io/docs/installation-instructions>
+
+## Features
+
+ViroReact ships with a complete spatial computing toolkit out of the box — no third-party plugins, no paid add-ons.
+
+**Tracking and anchoring**
+
+- AR plane detection with horizontal and vertical surface anchors
+- Image and object recognition triggers
+- Cloud Anchors for persistent, multi-user shared AR content _(Platform feature)_
+- Geospatial Anchors that pin content to real-world latitude, longitude, and altitude _(Platform feature)_
+
+**Rendering**
+
+- PBR lighting, HDR environment maps, and real-time shadow casting
+- 360° photo and video environments
+- Portal rendering for immersive pass-through experiences
+- OBJ, FBX, and GLTF/GLB model loading with embedded animations
+- Custom procedural geometry and custom GPU shaders
+
+**Interaction and motion**
+
+- Built-in physics engine with dynamic and static bodies, collision callbacks
+- Particle system for fire, smoke, rain, snow, confetti, and other effects
+- Declarative animation system with sequencing and chaining
+- Full input event system: tap, drag, pinch, rotate, fuse, hover
+
+**Audio**
+
+- Spatial audio, 360° sound fields, and positioned 3D audio
+
+## Platform Features
+
+Cloud Anchors, Geospatial Anchors, and AI-powered 3D asset creation are powered by **ReactVision Platform** — managed cloud infrastructure built directly into ViroReact. Add your `rvApiKey` and `rvProjectId` and the platform handles hosting, resolution, and geospatial infrastructure for you.
+
+You can get a Studio account, which includes Platform access, for free at <https://studio.reactvision.xyz>.
+
+- Cloud Anchors guide: <https://viro-community.readme.io/docs/cloud-anchors>
+- Geospatial Anchors guide: <https://viro-community.readme.io/docs/geospatial-anchors>
 
 ## Documentation
 
-Documentation is available here: https://viro-community.readme.io/docs/overview
+- Full API reference and guides: <https://viro-community.readme.io/docs/overview>
+- Getting started tutorial: <https://updates.reactvision.xyz/get-started-with-the-viroreact-and-expo-starter-kit-a9ca88803e5a>
 
-We do our best to keep it up to date, but you may occasionally encounter broken links or outdated samples. If you spot anything, please submit an edit or reach out on Discord: https://discord.gg/A6TaFNqwVc
+## Community
 
-## Getting Started
-
-If you’re starting a fresh project with ViroReact, clone one of the starter kits:
-
-- Expo + TypeScript: https://github.com/ReactVision/expo-starter-kit-typescript
-- React Native: https://github.com/ReactVision/starter-kit
-- Expo + JavaScript: https://github.com/ReactVision/expo-starter-kit
-
-## Examples
-
-See the `./examples` directory for sample code demonstrating ViroReact usage, including automatic architecture detection and other features.
-
-You can also browse the example projects page: https://viro-community.readme.io/docs/examples  
-These are a little old (~2019), but they’re still a useful reference for many parts of the library.
-
-## Connect with the ReactVision Community
-
-For support, discussion, or contributing to ViroReact, Discord is the best place to find us:
+Discord is the best place to find the team and other developers building with ViroReact:
 
 <a href="https://discord.gg/A6TaFNqwVc">
-  <img src="https://discordapp.com/api/guilds/774471080713781259/widget.png?style=banner2" alt="Discord Banner"/>
+  <img src="https://discordapp.com/api/guilds/774471080713781259/widget.png?style=banner2" />
 </a>
 
-## External Support
+## Enterprise Support and Partners
 
-If you need hands-on help, we maintain a list of trusted partners you can hire:  
-https://viro-community.readme.io/docs/hire-a-viro-react-expert
+For teams adopting XR at scale, the ReactVision team works directly with you on architecture, migrations from 8th Wall or Unity, performance audits, and shipping production experiences. <https://reactvision.xyz/contact>
 
-All partners are vetted by the ReactVision team and have experience shipping production-grade apps with Viro.
-
-## Powered by
-
-[![JetBrains logo.](https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg)](https://jb.gg/OpenSource)
+For independent agencies and consultants vetted by the ReactVision team: <https://reactvision.xyz/partners>
 
 ## Supporters
 
-A huge thank you to everyone who supports ongoing development by sponsoring us on GitHub:  
-https://github.com/sponsors/ReactVision
+A huge thank you to everyone who supports ongoing development by sponsoring us on GitHub: <https://github.com/sponsors/ReactVision>
 
-- https://github.com/devicecloud-dev — Device Cloud: https://devicecloud.dev/
-- https://github.com/lentesta
-- Looking Glass: http://looking-glass.space
+- [Device Cloud](https://devicecloud.dev/)
+- [Looking Glass](http://looking-glass.space)
+- [@lentesta](https://github.com/lentesta)
+
+## Powered by
+
+[![JetBrains logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg)](https://jb.gg/OpenSource)
+
+JetBrains supports ViroReact development through their [Open Source program](https://jb.gg/OpenSource).
+
+## Find Out More
+
+- Website: <https://reactvision.xyz>
+- ViroReact: <https://reactvision.xyz/viro-react>
+- ReactVision Studio: <https://studio.reactvision.xyz>
+- Blog: <https://updates.reactvision.xyz>
 
 ## A little history…
 
-ViroReact was originally developed by Viro Media (http://www.viromedia.com/) and open-sourced in 2019.
+ViroReact was originally developed by Viro Media and open-sourced in 2019. In late 2020, the Viro Community formed to maintain and modernise the project, keeping it compatible with current React Native versions. In January 2025, Morrow Digital acquired the project to invest in its future, and in late 2025 ReactVision was spun out as an independent company with a full-time team building the next generation of XR tooling.
 
-In late 2020, the Viro Community formed to help maintain and modernise the project—keeping it compatible with current React Native versions and expanding functionality over time.
+---
 
-In 2025, Morrow acquired ReactVision (https://www.themorrow.digital/blog/morrow-acquires-reactvision-and-viroreact-library) to accelerate development and invest in the future of ViroReact. ReactVision now has a full-time team working to keep the codebase current and ready for the next generation of XR / spatial computing.
-
-Our vision is to enable React Native developers to build AR and VR applications that run across XR devices (smartphones, smart glasses, and headsets) from a single React Native codebase.
-
-We (as a community) owe a great debt to Viro Media and the original authors of this library, and we hope to make them proud as it continues to grow within ReactVision.
+MIT licensed. © ReactVision, Inc.

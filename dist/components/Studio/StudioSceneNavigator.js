@@ -38,18 +38,21 @@ const React = __importStar(require("react"));
 const react_1 = require("react");
 const react_native_1 = require("react-native");
 const ViroARScene_1 = require("../AR/ViroARScene");
-const ViroARSceneNavigator_1 = require("../AR/ViroARSceneNavigator");
+const ViroScene_1 = require("../ViroScene");
+const ViroXRSceneNavigator_1 = require("../ViroXRSceneNavigator");
+const ViroPlatform_1 = require("../Utilities/ViroPlatform");
 const StudioARScene_1 = require("./StudioARScene");
-// Minimal placeholder rendered while rvGetScene is in-flight.
-function LoadingScene() { return <ViroARScene_1.ViroARScene />; }
+const VRTStudioModule_1 = require("./VRTStudioModule");
+function LoadingARScene() { return <ViroARScene_1.ViroARScene />; }
+function LoadingVRScene() { return <ViroScene_1.ViroScene />; }
 /**
- * Drop-in AR scene component that fetches and renders a Studio-authored scene.
+ * Cross-reality Studio scene navigator. Renders a Studio-authored scene on
+ * both AR devices (iOS / non-Quest Android) and Meta Quest (VR).
  *
- * Auth is handled by the ReactVision API key wired through the Expo plugin
- * (rvProjectId in app.json). No Supabase client needed.
- *
- * Usage:
- *   <StudioSceneNavigator sceneId="abc-123-uuid" style={StyleSheet.absoluteFill} />
+ * Opening-scene resolution order:
+ *   1. `sceneId` prop → use it directly
+ *   2. Native project (RVProjectId from manifest) → use `opening_scene.id`
+ *   3. Fallback → first scene in the project's scene list
  */
 function StudioSceneNavigator({ sceneId, worldAlignment = "Gravity", autofocus = true, style, onSceneReady, onError, onSceneChange, }) {
     const navigatorRef = (0, react_1.useRef)(null);
@@ -60,49 +63,76 @@ function StudioSceneNavigator({ sceneId, worldAlignment = "Gravity", autofocus =
     onSceneReadyRef.current = onSceneReady;
     onErrorRef.current = onError;
     onSceneChangeRef.current = onSceneChange;
-    const loadScene = (0, react_1.useCallback)(async (id, isCancelled) => {
-        // Wait one frame to ensure the native view is mounted and has a node handle.
+    const pushScene = (0, react_1.useCallback)((sceneData) => {
+        if (ViroPlatform_1.isQuest) {
+            navigatorRef.current?.sceneNavigator?.push({
+                scene: StudioARScene_1.StudioARScene,
+                passProps: {
+                    sceneData,
+                    onReady: onSceneReadyRef.current,
+                    onSceneChange: onSceneChangeRef.current,
+                },
+            });
+        }
+        else {
+            navigatorRef.current?.arSceneNavigator?.push({
+                scene: StudioARScene_1.StudioARScene,
+                passProps: {
+                    sceneData,
+                    onReady: onSceneReadyRef.current,
+                    onSceneChange: onSceneChangeRef.current,
+                },
+            });
+        }
+    }, []);
+    const resolveSceneId = (0, react_1.useCallback)(async () => {
+        if (sceneId)
+            return sceneId;
+        const projectResult = await VRTStudioModule_1.VRTStudioModule.rvGetProject();
+        if (!projectResult.success) {
+            throw new Error(projectResult.error ?? "rvGetProject failed");
+        }
+        if (typeof projectResult.data !== "string") {
+            throw new Error("rvGetProject returned no data");
+        }
+        const { project } = JSON.parse(projectResult.data);
+        if (project.opening_scene?.id) {
+            return project.opening_scene.id;
+        }
+        if (project.scenes.length > 0) {
+            return project.scenes[0].id;
+        }
+        throw new Error(`Project ${project.id} has no scenes`);
+    }, [sceneId]);
+    const loadScene = (0, react_1.useCallback)(async (isCancelled) => {
+        // Wait one frame to ensure the native view is mounted.
         await new Promise((resolve) => requestAnimationFrame(() => resolve()));
         if (isCancelled())
             return;
-        const nav = navigatorRef.current?.arSceneNavigator;
-        if (!nav) {
-            throw new Error("ViroARSceneNavigator not mounted");
-        }
-        const result = await nav.rvGetScene(id);
+        const resolvedSceneId = await resolveSceneId();
         if (isCancelled())
             return;
-        if (!result?.success) {
-            throw new Error(result?.error ?? "rvGetScene failed");
+        if (loadedSceneIdRef.current === resolvedSceneId)
+            return;
+        const result = await VRTStudioModule_1.VRTStudioModule.rvGetScene(resolvedSceneId);
+        if (isCancelled())
+            return;
+        if (!result.success) {
+            throw new Error(result.error ?? "rvGetScene failed");
         }
         if (typeof result.data !== "string") {
             throw new Error("rvGetScene returned no data");
         }
-        let sceneData;
-        try {
-            sceneData = JSON.parse(result.data);
-        }
-        catch (parseErr) {
-            throw new Error(`Failed to parse scene response: ${parseErr.message}`);
-        }
+        const sceneData = JSON.parse(result.data);
         if (isCancelled())
             return;
-        loadedSceneIdRef.current = id;
-        nav.push({
-            scene: StudioARScene_1.StudioARScene,
-            passProps: {
-                sceneData,
-                onReady: onSceneReadyRef.current,
-                onSceneChange: onSceneChangeRef.current,
-            },
-        });
-    }, []);
+        loadedSceneIdRef.current = resolvedSceneId;
+        pushScene(sceneData);
+    }, [resolveSceneId, pushScene]);
     (0, react_1.useEffect)(() => {
-        if (loadedSceneIdRef.current === sceneId)
-            return;
         let cancelled = false;
         const isCancelled = () => cancelled;
-        loadScene(sceneId, isCancelled).catch((e) => {
+        loadScene(isCancelled).catch((e) => {
             if (cancelled)
                 return;
             const err = e instanceof Error ? e : new Error(String(e));
@@ -112,9 +142,7 @@ function StudioSceneNavigator({ sceneId, worldAlignment = "Gravity", autofocus =
             else
                 console.error("[Studio] Failed to load scene:", err);
         });
-        return () => {
-            cancelled = true;
-        };
+        return () => { cancelled = true; };
     }, [sceneId, loadScene]);
-    return (<ViroARSceneNavigator_1.ViroARSceneNavigator ref={navigatorRef} initialScene={{ scene: LoadingScene }} worldAlignment={worldAlignment} autofocus={autofocus} style={style ?? react_native_1.StyleSheet.absoluteFill}/>);
+    return (<ViroXRSceneNavigator_1.ViroXRSceneNavigator ref={navigatorRef} arInitialScene={{ scene: LoadingARScene }} vrInitialScene={{ scene: LoadingVRScene }} worldAlignment={worldAlignment} autofocus={autofocus} style={style ?? react_native_1.StyleSheet.absoluteFill}/>);
 }

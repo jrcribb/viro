@@ -12,20 +12,18 @@ import { ViroARImageMarker } from "../AR/ViroARImageMarker";
 import { ViroARPlane } from "../AR/ViroARPlane";
 import { ViroARPlaneSelector } from "../AR/ViroARPlaneSelector";
 import { ViroARScene } from "../AR/ViroARScene";
+import { ViroScene } from "../ViroScene";
 import { ViroText } from "../ViroText";
+import { isQuest } from "../Utilities/ViroPlatform";
 import { registerSceneAnimations } from "./domain/animationRegistry";
-import {
-  createPlacementCollisionHandler,
-} from "./domain/collisionBindingsRuntime";
+import { createPlacementCollisionHandler } from "./domain/collisionBindingsRuntime";
 import { collisionPairKey } from "./domain/collisionPairKey";
 import {
   cleanupTriggerImageTargets,
   registerTriggerImageTargets,
 } from "./domain/triggerImageRegistry";
 import { createNode } from "./domain/viroNodeFactory";
-import {
-  executeOnLoadFunction,
-} from "./domain/sceneNavigationHandler";
+import { executeOnLoadFunction } from "./domain/sceneNavigationHandler";
 import { registerStudioMaterialsForAssets } from "./domain/studioMaterials";
 import { useStudioShaderTimeUniforms } from "./domain/useStudioShaderTimeUniforms";
 import { useStudioShaderViewportUniforms } from "./domain/useStudioShaderViewportUniforms";
@@ -39,51 +37,48 @@ import {
 const ANDROID_MAX_3D_MODELS = 3;
 const IOS_MAX_3D_MODELS = 10;
 
-/** Per-asset active animation (key + run state for the false→true rAF trick). */
 type AnimOverride = { key: string; run: boolean };
 
 interface StudioARSceneProps {
-  /** Injected automatically by ViroARSceneNavigator */
   sceneNavigator?: any;
-  /** The fully loaded scene response — passed via passProps */
   sceneData: StudioSceneResponse | null;
   onReady?: () => void;
   onError?: (err: Error) => void;
-  /** Called when a NAVIGATION function transitions to a new scene. */
   onSceneChange?: (sceneId: string, sceneName: string) => void;
 }
 
 /**
- * AR scene component driven by a StudioSceneResponse.
- * Passed as `scene` to ViroARSceneNavigator.initialScene and also
- * to sceneNavigator.push() when navigating between scenes.
+ * Outer gate: keeps the hooks-bearing inner component out of the tree until
+ * sceneData is available, avoiding a Rules of Hooks violation.
  */
 export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
+  if (!props.sceneData) {
+    return isQuest ? <ViroScene /> : <ViroARScene />;
+  }
+  return <StudioARSceneInner {...props} sceneData={props.sceneData} />;
+};
+
+// ─── Inner component (all hooks live here) ────────────────────────────────────
+
+interface StudioARSceneInnerProps extends StudioARSceneProps {
+  sceneData: StudioSceneResponse; // guaranteed non-null by outer gate
+}
+
+const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   const { sceneNavigator, sceneData, onReady, onSceneChange } = props;
-
-  // Guard: sceneData may be null during the brief push animation.
-  if (!sceneData) return <ViroARScene />;
-
-  const { scene, assets, animations, collision_bindings, functions } =
-    sceneData;
+  const { scene, assets, animations, collision_bindings, functions } = sceneData;
 
   // ─── Material registration ────────────────────────────────────────────────
-  // Must run synchronously before first render so shaderOverrides resolve.
   const materialsRegisteredRef = useRef(false);
   if (!materialsRegisteredRef.current) {
     registerStudioMaterialsForAssets(assets);
     materialsRegisteredRef.current = true;
   }
 
-  // Drive `time` uniform for animated shader presets (~60fps).
   useStudioShaderTimeUniforms(assets);
-
-  // Push _rf_vpw / _rf_vph viewport uniforms for shaders sampling the camera feed.
   useStudioShaderViewportUniforms(assets);
 
   // ─── Animation registration ───────────────────────────────────────────────
-  // Done synchronously at render time so the registry is populated before
-  // any Viro component reads the animation prop.
   const registeredKeyRef = useRef<string | null>(null);
   const animationsKey = animations.map((a) => a.animation_key).join(",");
   if (animations.length > 0 && registeredKeyRef.current !== animationsKey) {
@@ -92,23 +87,14 @@ export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
   }
 
   // ─── Animation runtime state ──────────────────────────────────────────────
-
-  const [animOverrides, setAnimOverrides] = useState<
-    Record<string, AnimOverride>
-  >({});
-
-  const [loadedAssetIds, setLoadedAssetIds] = useState<
-    Record<string, true>
-  >({});
+  const [animOverrides, setAnimOverrides] = useState<Record<string, AnimOverride>>({});
+  const [loadedAssetIds, setLoadedAssetIds] = useState<Record<string, true>>({});
 
   const handleAssetLoaded = useCallback((assetId: string) => {
-    setLoadedAssetIds((prev) =>
-      prev[assetId] ? prev : { ...prev, [assetId]: true }
-    );
+    setLoadedAssetIds((prev) => prev[assetId] ? prev : { ...prev, [assetId]: true });
   }, []);
 
   const triggerRafsRef = useRef<Set<number>>(new Set());
-
   useEffect(() => {
     return () => {
       triggerRafsRef.current.forEach((id) => cancelAnimationFrame(id));
@@ -116,48 +102,35 @@ export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
     };
   }, []);
 
-  /** Two-step rAF animation trigger: set run:false then run:true on next frame. */
-  const triggerAnimation = useCallback(
-    (targetAssetId: string, animationKey: string) => {
-      setAnimOverrides((prev) => ({
-        ...prev,
-        [targetAssetId]: { key: animationKey, run: false },
-      }));
-      const rafId = requestAnimationFrame(() => {
-        triggerRafsRef.current.delete(rafId);
-        setAnimOverrides((prev) => {
-          const current = prev[targetAssetId];
-          if (!current || current.key !== animationKey || current.run)
-            return prev;
-          return { ...prev, [targetAssetId]: { key: animationKey, run: true } };
-        });
+  const triggerAnimation = useCallback((targetAssetId: string, animationKey: string) => {
+    setAnimOverrides((prev) => ({ ...prev, [targetAssetId]: { key: animationKey, run: false } }));
+    const rafId = requestAnimationFrame(() => {
+      triggerRafsRef.current.delete(rafId);
+      setAnimOverrides((prev) => {
+        const current = prev[targetAssetId];
+        if (!current || current.key !== animationKey || current.run) return prev;
+        return { ...prev, [targetAssetId]: { key: animationKey, run: true } };
       });
-      triggerRafsRef.current.add(rafId);
-    },
-    []
-  );
+    });
+    triggerRafsRef.current.add(rafId);
+  }, []);
 
   const triggerAnimationRef = useRef(triggerAnimation);
   triggerAnimationRef.current = triggerAnimation;
 
   // ─── Computed animation props per asset ──────────────────────────────────
-
   const animationStates = useMemo<Record<string, ViroAnimationProp>>(() => {
     const states: Record<string, ViroAnimationProp> = {};
-
-    // Group animations by target asset
     const animsByAsset = new Map<string, StudioAnimation[]>();
     for (const anim of animations) {
       const list = animsByAsset.get(anim.target_asset_id) ?? [];
       list.push(anim);
       animsByAsset.set(anim.target_asset_id, list);
     }
-
     for (const [assetId, anims] of animsByAsset) {
       const override = animOverrides[assetId];
       let activeAnim: StudioAnimation;
       let run: boolean;
-
       if (override) {
         const triggered = anims.find((a) => a.animation_key === override.key);
         if (!triggered) continue;
@@ -167,7 +140,6 @@ export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
         activeAnim = anims[0];
         run = false;
       }
-
       states[assetId] = {
         name: activeAnim.animation_key,
         run,
@@ -175,33 +147,17 @@ export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
         interruptible: activeAnim.interruptible,
         delay: activeAnim.delay_ms ?? 0,
         onStart: activeAnim.on_start_function
-          ? () =>
-              executeOnLoadFunction(
-                activeAnim.on_start_function!,
-                functions,
-                sceneNavigator,
-                animations,
-                (id, key) => triggerAnimationRef.current(id, key)
-              )
+          ? () => executeOnLoadFunction(activeAnim.on_start_function!, functions, sceneNavigator, animations, (id, key) => triggerAnimationRef.current(id, key))
           : undefined,
         onFinish: activeAnim.on_finish_function
-          ? () =>
-              executeOnLoadFunction(
-                activeAnim.on_finish_function!,
-                functions,
-                sceneNavigator,
-                animations,
-                (id, key) => triggerAnimationRef.current(id, key)
-              )
+          ? () => executeOnLoadFunction(activeAnim.on_finish_function!, functions, sceneNavigator, animations, (id, key) => triggerAnimationRef.current(id, key))
           : undefined,
       };
     }
-
     return states;
   }, [animations, animOverrides, loadedAssetIds, functions, sceneNavigator]);
 
   // ─── on_load_function ─────────────────────────────────────────────────────
-
   const onLoadExecutedRef = useRef(false);
   useEffect(() => {
     if (scene.on_load_function && !onLoadExecutedRef.current) {
@@ -218,7 +174,6 @@ export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
   }, [scene.id]);
 
   // ─── Collision bindings ───────────────────────────────────────────────────
-
   const bindingsByPairKey = useMemo(() => {
     const m = new Map<string, (typeof collision_bindings)[0][]>();
     for (const b of collision_bindings) {
@@ -258,31 +213,32 @@ export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
   );
 
   // ─── Trigger image targets ────────────────────────────────────────────────
-
   const { planeAssets, imageTriggeredAssets } = useMemo(() => {
     const plane = assets.filter((a) => !a.trigger_image_url);
     const imgTriggered = assets.filter((a) => !!a.trigger_image_url);
     return { planeAssets: plane, imageTriggeredAssets: imgTriggered };
   }, [assets]);
 
-  const [urlToTargetName, setUrlToTargetName] = useState<Map<string, string>>(
-    () => new Map()
-  );
+  const [urlToTargetName, setUrlToTargetName] = useState<Map<string, string>>(() => new Map());
   const prevTargetNamesRef = useRef<string[]>([]);
 
   useEffect(() => {
+    if (isQuest) {
+      if (imageTriggeredAssets.length > 0) {
+        console.warn("[Studio] Image-triggered assets are not supported on Quest — skipping.");
+      }
+      return;
+    }
     if (imageTriggeredAssets.length === 0) {
       cleanupTriggerImageTargets(prevTargetNamesRef.current);
       prevTargetNamesRef.current = [];
       setUrlToTargetName(new Map());
       return;
     }
-
     const map = registerTriggerImageTargets(imageTriggeredAssets);
     const targetNames = [...map.values()];
     prevTargetNamesRef.current = targetNames;
     setUrlToTargetName(map);
-
     return () => {
       cleanupTriggerImageTargets(targetNames);
       prevTargetNamesRef.current = [];
@@ -290,15 +246,10 @@ export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
   }, [imageTriggeredAssets]);
 
   // ─── Ready callback ───────────────────────────────────────────────────────
-
-  useEffect(() => {
-    onReady?.();
-  }, []);
+  useEffect(() => { onReady?.(); }, []);
 
   // ─── Render helpers ───────────────────────────────────────────────────────
-
-  const maxModels =
-    Platform.OS === "android" ? ANDROID_MAX_3D_MODELS : IOS_MAX_3D_MODELS;
+  const maxModels = Platform.OS === "android" ? ANDROID_MAX_3D_MODELS : IOS_MAX_3D_MODELS;
 
   const renderedPlaneAssets = useMemo(() => {
     let modelCount = 0;
@@ -307,9 +258,7 @@ export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
         if (asset.asset_type_name === "3D-MODEL") {
           modelCount++;
           if (modelCount > maxModels) {
-            console.warn(
-              `[Studio] Skipping 3D model "${asset.name}" — ${Platform.OS} limit (${maxModels}) reached`
-            );
+            console.warn(`[Studio] Skipping 3D model "${asset.name}" — ${Platform.OS} limit (${maxModels}) reached`);
             return null;
           }
         }
@@ -320,26 +269,19 @@ export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
           scene,
           (id, key) => triggerAnimationRef.current(id, key),
           animationStates,
-          handleAssetLoaded
+          handleAssetLoaded,
+          getCollisionHandler(asset.id),
         );
       })
       .filter(Boolean) as React.ReactElement[];
-  }, [
-    planeAssets,
-    sceneNavigator,
-    animations,
-    animationStates,
-    handleAssetLoaded,
-    getCollisionHandler,
-    maxModels,
-  ]);
+  }, [planeAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler, maxModels]);
 
   const renderedImageTriggeredAssets = useMemo(() => {
+    if (isQuest) return [];
     return imageTriggeredAssets
       .map((asset) => {
         const targetName = urlToTargetName.get(asset.trigger_image_url!);
         if (!targetName) return null;
-
         const node = createNode(
           asset,
           sceneNavigator,
@@ -347,10 +289,10 @@ export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
           scene,
           (id, key) => triggerAnimationRef.current(id, key),
           animationStates,
-          handleAssetLoaded
+          handleAssetLoaded,
+          getCollisionHandler(asset.id),
         );
         if (!node) return null;
-
         return (
           <ViroARImageMarker key={asset.id} target={targetName}>
             {node}
@@ -358,69 +300,63 @@ export const StudioARScene: React.FC<StudioARSceneProps> = (props) => {
         );
       })
       .filter(Boolean) as React.ReactElement[];
-  }, [
-    urlToTargetName,
-    imageTriggeredAssets,
-    sceneNavigator,
-    animations,
-    animationStates,
-    handleAssetLoaded,
-  ]);
+  }, [urlToTargetName, imageTriggeredAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler]);
 
-  // ─── Plane detection mode ─────────────────────────────────────────────────
-
-  const planeDetectionMode = (
-    (scene.plane_detection as string) ?? "NONE"
-  ).toUpperCase();
+  // ─── Plane detection (AR only) ────────────────────────────────────────────
+  const planeDetectionMode = ((scene.plane_detection as string) ?? "NONE").toUpperCase();
   const planeAlignment = (scene.plane_direction ?? "Horizontal") as any;
 
-  // ─── Physics world ────────────────────────────────────────────────────────
+  const renderAssets = () => {
+    if (isQuest) {
+      if (planeDetectionMode !== "NONE") {
+        console.warn(`[Studio] Plane detection (${planeDetectionMode}) is not supported on Quest — rendering assets without plane anchor.`);
+      }
+      return <>{renderedPlaneAssets}</>;
+    }
 
+    if (planeDetectionMode === "AUTOMATIC") {
+      return (
+        <ViroARPlane minHeight={0.1} minWidth={0.1} alignment={planeAlignment}>
+          {renderedPlaneAssets}
+        </ViroARPlane>
+      );
+    }
+    if (planeDetectionMode === "MANUAL") {
+      return (
+        <ViroARPlaneSelector minHeight={0.1} minWidth={0.1} alignment={planeAlignment}>
+          {renderedPlaneAssets}
+        </ViroARPlaneSelector>
+      );
+    }
+    return <>{renderedPlaneAssets}</>;
+  };
+
+  // ─── Physics world ────────────────────────────────────────────────────────
   const physicsWorldConfig = parsePhysicsWorldConfig(scene.physics_world_config);
   const physicsWorld = physicsWorldConfig?.enabled
     ? buildViroPhysicsWorld(physicsWorldConfig)
     : undefined;
 
+  const physicsProps = physicsWorld ? { physicsWorld: physicsWorld as any } : {};
+
   // ─── Render ───────────────────────────────────────────────────────────────
-
-  return (
-    <ViroARScene {...(physicsWorld ? { physicsWorld: physicsWorld as any } : {})}>
+  const children = (
+    <>
       <ViroAmbientLight color="#ffffff" intensity={1000} />
-
-      {planeDetectionMode === "AUTOMATIC" ? (
-        <ViroARPlane
-          minHeight={0.1}
-          minWidth={0.1}
-          alignment={planeAlignment}
-        >
-          {renderedPlaneAssets}
-        </ViroARPlane>
-      ) : planeDetectionMode === "MANUAL" ? (
-        <ViroARPlaneSelector
-          minHeight={0.1}
-          minWidth={0.1}
-          alignment={planeAlignment}
-        >
-          {renderedPlaneAssets}
-        </ViroARPlaneSelector>
-      ) : (
-        <>{renderedPlaneAssets}</>
-      )}
-
+      {renderAssets()}
       {renderedImageTriggeredAssets}
-
       {assets.length === 0 && (
         <ViroText
           text="No assets to display"
           position={[0, 0, -2]}
-          style={{
-            fontFamily: "Arial",
-            fontSize: 16,
-            color: "#CCCCCC",
-            textAlign: "center",
-          }}
+          style={{ fontFamily: "Arial", fontSize: 16, color: "#CCCCCC", textAlign: "center" }}
         />
       )}
-    </ViroARScene>
+    </>
   );
+
+  if (isQuest) {
+    return <ViroScene {...physicsProps}>{children}</ViroScene>;
+  }
+  return <ViroARScene {...physicsProps}>{children}</ViroARScene>;
 };

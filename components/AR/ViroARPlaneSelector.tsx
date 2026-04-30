@@ -13,6 +13,7 @@
 
 import { ViroAnchor, ViroPlaneUpdatedMap } from "../Types/ViroEvents";
 import * as React from "react";
+import { isQuest } from "../Utilities/ViroPlatform";
 import { ViroMaterials } from "../Material/ViroMaterials";
 import { ViroNode } from "../ViroNode";
 import { ViroQuad } from "../ViroQuad";
@@ -416,6 +417,10 @@ export class ViroARPlaneSelector extends React.Component<Props, State> {
   // ---------------------------------------------------------------------------
 
   render() {
+    if (isQuest) {
+      console.warn("[Viro] ViroARPlaneSelector is not supported on Quest and will not render.");
+      return null;
+    }
     return <ViroNode>{this._renderPlanes()}</ViroNode>;
   }
 

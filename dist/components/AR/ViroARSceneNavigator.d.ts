@@ -506,6 +506,7 @@ export declare class ViroARSceneNavigator extends React.Component<Props, State> 
     _rvUpdateCloudAnchor: (anchorId: string, name: string, description: string, isPublic: boolean) => Promise<any>;
     _rvDeleteCloudAnchor: (anchorId: string) => Promise<any>;
     _rvFindNearbyCloudAnchors: (latitude: number, longitude: number, radius: number, limit: number) => Promise<any>;
+    _rvGetProject: () => Promise<any>;
     _rvGetScene: (sceneId: string) => Promise<any>;
     _rvGetSceneAssets: (sceneId: string) => Promise<any>;
     _rvAttachAssetToCloudAnchor: (anchorId: string, fileUrl: string, fileSize: number, name: string, assetType: string, externalUserId: string) => Promise<any>;
@@ -626,6 +627,7 @@ export declare class ViroARSceneNavigator extends React.Component<Props, State> 
         rvAttachAssetToCloudAnchor: (anchorId: string, fileUrl: string, fileSize: number, name: string, assetType: string, externalUserId: string) => Promise<any>;
         rvRemoveAssetFromCloudAnchor: (anchorId: string, assetId: string) => Promise<any>;
         rvTrackCloudAnchorResolution: (anchorId: string, success: boolean, confidence: number, matchCount: number, inlierCount: number, processingTimeMs: number, platform: string, externalUserId: string) => Promise<any>;
+        rvGetProject: () => Promise<any>;
         rvGetScene: (sceneId: string) => Promise<any>;
         rvGetSceneAssets: (sceneId: string) => Promise<any>;
         rvUploadAsset: (filePath: string, assetType: string, fileName: string, appUserId?: string) => Promise<any>;
@@ -679,6 +681,7 @@ export declare class ViroARSceneNavigator extends React.Component<Props, State> 
         rvAttachAssetToCloudAnchor: (anchorId: string, fileUrl: string, fileSize: number, name: string, assetType: string, externalUserId: string) => Promise<any>;
         rvRemoveAssetFromCloudAnchor: (anchorId: string, assetId: string) => Promise<any>;
         rvTrackCloudAnchorResolution: (anchorId: string, success: boolean, confidence: number, matchCount: number, inlierCount: number, processingTimeMs: number, platform: string, externalUserId: string) => Promise<any>;
+        rvGetProject: () => Promise<any>;
         rvGetScene: (sceneId: string) => Promise<any>;
         rvGetSceneAssets: (sceneId: string) => Promise<any>;
         rvUploadAsset: (filePath: string, assetType: string, fileName: string, appUserId?: string) => Promise<any>;

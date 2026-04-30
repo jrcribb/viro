@@ -50,6 +50,7 @@ import { ViroCamera } from "../ViroCamera";
 import { ViroTrackingStateConstants } from "../ViroConstants";
 import { ViroCommonProps } from "./ViroCommonProps";
 import { ViroOrbitCamera } from "components/ViroOrbitCamera";
+import { isQuest } from "../Utilities/ViroPlatform";
 
 const ViroCameraModule = NativeModules.ViroCameraModule;
 
@@ -413,6 +414,10 @@ export class ViroARScene extends ViroBase<Props> {
   };
 
   render() {
+    if (isQuest) {
+      console.warn("[Viro] ViroARScene is not supported on Quest and will not render. Use ViroScene instead.");
+      return null;
+    }
     // Uncomment this line to check for misnamed props
     //checkMisnamedProps("ViroARScene", this.props);
 

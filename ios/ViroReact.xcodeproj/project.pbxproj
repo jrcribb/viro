@@ -42,11 +42,11 @@
 		8A5CDE221F68D5470093F43B /* VRTPolyline.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = 8AFC1C351EC1001C0000F7EB /* VRTPolyline.h */; };
 		8A5CDE231F68D5470093F43B /* VRTPortalScene.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = 8FEF00631F37ACCC006AE4B1 /* VRTPortalScene.h */; };
 		8A5CDE241F68D5470093F43B /* VRTPortal.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = 8FEF00841F37D04F006AE4B1 /* VRTPortal.h */; };
-		8A5CDE251F68D5470093F43B /* BuildFile in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; };
+		8A5CDE251F68D5470093F43B /* (null) in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; };
 		8A5CDE261F68D5470093F43B /* VRTPolylineManager.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = 8A56302D1EBBFF5F009E71A7 /* VRTPolylineManager.h */; };
 		8A5CDE271F68D5470093F43B /* VRTPortalSceneManager.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = 8FEF00821F37CAEF006AE4B1 /* VRTPortalSceneManager.h */; };
 		8A5CDE281F68D5470093F43B /* VRTPortalManager.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = 8FEF00871F37D0C0006AE4B1 /* VRTPortalManager.h */; };
-		8A5CDE291F68D5470093F43B /* BuildFile in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; };
+		8A5CDE291F68D5470093F43B /* (null) in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; };
 		8A5CDE2A1F68D56F0093F43B /* VRTNodeModule.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = A50A310C1ECE1E8800DEBE9B /* VRTNodeModule.h */; };
 		8A5CDE2B1F68D56F0093F43B /* VRTSceneModule.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = A5E8F0A71ED6B64D00729916 /* VRTSceneModule.h */; };
 		8A5CDE2C1F68D56F0093F43B /* VRTControllerModule.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = A533596D1E9E0169005B3EC5 /* VRTControllerModule.h */; };
@@ -213,17 +213,19 @@
 		A5E8F0AC1ED6B64E00729916 /* VRTSceneModule.mm in Sources */ = {isa = PBXBuildFile; fileRef = A5E8F0A81ED6B64D00729916 /* VRTSceneModule.mm */; };
 		A5F6D4011E4B0DFF00655F60 /* VRTController.mm in Sources */ = {isa = PBXBuildFile; fileRef = A5F6D4001E4B0DFF00655F60 /* VRTController.mm */; };
 		A5F6D4051E4B179700655F60 /* VRTControllerManager.mm in Sources */ = {isa = PBXBuildFile; fileRef = A5F6D4041E4B179700655F60 /* VRTControllerManager.mm */; };
-		E139A8EB2E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
-		E139A8EC2E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
-		E139A8ED2E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
-		E139A8EE2E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
-		E139A8EF2E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
-		E139A8F02E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
-		E139A8F22E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
-		E139A8F32E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
-		E139A8F42E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
-		E139A8F52E0B9C6A0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
-		E139A9402E0BAF2D0050EC9A /* BuildFile in Sources */ = {isa = PBXBuildFile; };
+		E139A8EB2E0B9C6A0050EC9A /* (null) in Sources */ = {isa = PBXBuildFile; };
+		E139A8EC2E0B9C6A0050EC9A /* (null) in Sources */ = {isa = PBXBuildFile; };
+		E139A8ED2E0B9C6A0050EC9A /* (null) in Sources */ = {isa = PBXBuildFile; };
+		E139A8EE2E0B9C6A0050EC9A /* (null) in Sources */ = {isa = PBXBuildFile; };
+		E139A8EF2E0B9C6A0050EC9A /* (null) in Sources */ = {isa = PBXBuildFile; };
+		E139A8F02E0B9C6A0050EC9A /* (null) in Sources */ = {isa = PBXBuildFile; };
+		E139A8F22E0B9C6A0050EC9A /* (null) in Sources */ = {isa = PBXBuildFile; };
+		E139A8F32E0B9C6A0050EC9A /* (null) in Sources */ = {isa = PBXBuildFile; };
+		E139A8F42E0B9C6A0050EC9A /* (null) in Sources */ = {isa = PBXBuildFile; };
+		E139A8F52E0B9C6A0050EC9A /* (null) in Sources */ = {isa = PBXBuildFile; };
+		E139A9402E0BAF2D0050EC9A /* (null) in Sources */ = {isa = PBXBuildFile; };
+		E1F9E5512FA39DEB00DBE1E8 /* VRTStudioModule.mm in Sources */ = {isa = PBXBuildFile; fileRef = E1F9E5502FA39DEB00DBE1E8 /* VRTStudioModule.mm */; };
+		E1F9E5B22FA39E0300DBE1E8 /* VRTStudioModule.h in Copy Headers to ios/dist/include */ = {isa = PBXBuildFile; fileRef = E1F9E54F2FA39DEB00DBE1E8 /* VRTStudioModule.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -703,6 +705,48 @@
 			remoteGlobalIDString = 85A01882ED06DFEA2E0CE78BCDB204A7;
 			remoteInfo = SocketRocket;
 		};
+		E1F9E5A62FA39DEC00DBE1E8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8BDD9D9E1E09F39B00A42870 /* Pods.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 2E1F79B59673DDADE4D69889E86F0EF6;
+			remoteInfo = RCTSwiftUI;
+		};
+		E1F9E5A82FA39DEC00DBE1E8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8BDD9D9E1E09F39B00A42870 /* Pods.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 79BA67467E7C8C63F8AD7E8FA1098BB9;
+			remoteInfo = RCTSwiftUIWrapper;
+		};
+		E1F9E5AA2FA39DEC00DBE1E8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8BDD9D9E1E09F39B00A42870 /* Pods.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 0EA0C8CB97234CC173933CBA90DAB604;
+			remoteInfo = "React-intersectionobservernativemodule";
+		};
+		E1F9E5AC2FA39DEC00DBE1E8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8BDD9D9E1E09F39B00A42870 /* Pods.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = B14714BF74127103FF5AC696098A2BCB;
+			remoteInfo = "React-networking";
+		};
+		E1F9E5AE2FA39DEC00DBE1E8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8BDD9D9E1E09F39B00A42870 /* Pods.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = BD3F042ECF93D3D4FF7D6F1460F98E67;
+			remoteInfo = "React-performancecdpmetrics";
+		};
+		E1F9E5B02FA39DEC00DBE1E8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8BDD9D9E1E09F39B00A42870 /* Pods.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = C5AFFABFBCD88E3C1A1665D91F63DBB2;
+			remoteInfo = "React-webperformancenativemodule";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -712,6 +756,7 @@
 			dstPath = "${SRCROOT}/dist/include";
 			dstSubfolderSpec = 0;
 			files = (
+				E1F9E5B22FA39E0300DBE1E8 /* VRTStudioModule.h in Copy Headers to ios/dist/include */,
 				8BD950372058C73100F8BB9E /* VRTMaterialChangedDelegate.h in Copy Headers to ios/dist/include */,
 				A5B4AF002050B4FC0006D970 /* VRTPolygonManager.h in Copy Headers to ios/dist/include */,
 				A53F00D2203DE46300415D86 /* VRTHDRImageAsyncLoader.h in Copy Headers to ios/dist/include */,
@@ -723,11 +768,11 @@
 				8A5CDE221F68D5470093F43B /* VRTPolyline.h in Copy Headers to ios/dist/include */,
 				8A5CDE231F68D5470093F43B /* VRTPortalScene.h in Copy Headers to ios/dist/include */,
 				8A5CDE241F68D5470093F43B /* VRTPortal.h in Copy Headers to ios/dist/include */,
-				8A5CDE251F68D5470093F43B /* BuildFile in Copy Headers to ios/dist/include */,
+				8A5CDE251F68D5470093F43B /* (null) in Copy Headers to ios/dist/include */,
 				8A5CDE261F68D5470093F43B /* VRTPolylineManager.h in Copy Headers to ios/dist/include */,
 				8A5CDE271F68D5470093F43B /* VRTPortalSceneManager.h in Copy Headers to ios/dist/include */,
 				8A5CDE281F68D5470093F43B /* VRTPortalManager.h in Copy Headers to ios/dist/include */,
-				8A5CDE291F68D5470093F43B /* BuildFile in Copy Headers to ios/dist/include */,
+				8A5CDE291F68D5470093F43B /* (null) in Copy Headers to ios/dist/include */,
 				8A5CDE171F68D4BD0093F43B /* VRTARSceneNavigator.h in Copy Headers to ios/dist/include */,
 				8A5CDE181F68D4BD0093F43B /* VRTARAnchorNode.h in Copy Headers to ios/dist/include */,
 				8A5CDE191F68D4BD0093F43B /* VRTARPlane.h in Copy Headers to ios/dist/include */,
@@ -1067,6 +1112,8 @@
 		AB1E81C536C9046803693831 /* libPods-ViroReact.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ViroReact.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AB4ED2A244DA92CFDC77EE77 /* Pods-ViroReact.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ViroReact.debug.xcconfig"; path = "Pods/Target Support Files/Pods-ViroReact/Pods-ViroReact.debug.xcconfig"; sourceTree = "<group>"; };
 		B23F778D18583A1428591854 /* Pods-ViroReact.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ViroReact.release.xcconfig"; path = "Pods/Target Support Files/Pods-ViroReact/Pods-ViroReact.release.xcconfig"; sourceTree = "<group>"; };
+		E1F9E54F2FA39DEB00DBE1E8 /* VRTStudioModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = VRTStudioModule.h; path = ViroReact/Modules/VRTStudioModule.h; sourceTree = "<group>"; };
+		E1F9E5502FA39DEB00DBE1E8 /* VRTStudioModule.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = VRTStudioModule.mm; path = ViroReact/Modules/VRTStudioModule.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1164,6 +1211,8 @@
 				4130E575276D9EF2001A9615 /* libRCT-Folly.a */,
 				E1E0D32A2D544C9E00FDFE35 /* RCT-Folly_privacy.bundle */,
 				E1E0D32C2D544C9E00FDFE35 /* libRCTDeprecation.a */,
+				E1F9E5A72FA39DEC00DBE1E8 /* libRCTSwiftUI.a */,
+				E1F9E5A92FA39DEC00DBE1E8 /* libRCTSwiftUIWrapper.a */,
 				4130E577276D9EF2001A9615 /* libRCTTypeSafety.a */,
 				4130E579276D9EF2001A9615 /* libReact-Core.a */,
 				E1E0D32E2D544C9E00FDFE35 /* React-Core_privacy.bundle */,
@@ -1182,6 +1231,7 @@
 				E1E0D3442D544C9E00FDFE35 /* libReact-hermes.a */,
 				E1E0D3462D544C9E00FDFE35 /* libReact-idlecallbacksnativemodule.a */,
 				E1E0D3482D544C9E00FDFE35 /* libReact-ImageManager.a */,
+				E1F9E5AB2FA39DEC00DBE1E8 /* libReact-intersectionobservernativemodule.a */,
 				E1E0D34A2D544C9E00FDFE35 /* libReact-jserrorhandler.a */,
 				4130E581276D9EF2001A9615 /* libReact-jsi.a */,
 				4130E583276D9EF2001A9615 /* libReact-jsiexecutor.a */,
@@ -1194,8 +1244,10 @@
 				E1E0D34E2D544C9E00FDFE35 /* libReact-Mapbuffer.a */,
 				E1E0D3502D544C9E00FDFE35 /* libReact-microtasksnativemodule.a */,
 				E1E0D3542D544C9E00FDFE35 /* libReact-NativeModulesApple.a */,
+				E1F9E5AD2FA39DEC00DBE1E8 /* libReact-networking.a */,
 				E1CFA8AE2F371641004BC18F /* libReact-oscompat.a */,
 				4130E587276D9EF2001A9615 /* libReact-perflogger.a */,
+				E1F9E5AF2FA39DEC00DBE1E8 /* libReact-performancecdpmetrics.a */,
 				E1E0D3562D544C9E00FDFE35 /* libReact-performancetimeline.a */,
 				4130E589276D9EF2001A9615 /* libReact-RCTAnimation.a */,
 				E1E0D3582D544C9E00FDFE35 /* libReact-RCTAppDelegate.a */,
@@ -1218,6 +1270,7 @@
 				E1E0D3642D544C9E00FDFE35 /* libReact-RuntimeHermes.a */,
 				E1E0D3662D544C9E00FDFE35 /* libReact-runtimescheduler.a */,
 				E1E0D3682D544C9E00FDFE35 /* libReact-utils.a */,
+				E1F9E5B12FA39DEC00DBE1E8 /* libReact-webperformancenativemodule.a */,
 				E1CFA8B82F371641004BC18F /* libReactAppDependencyProvider.a */,
 				E1E0D36A2D544C9E00FDFE35 /* libReactCodegen.a */,
 				4130E599276D9EF2001A9615 /* libReactCommon.a */,
@@ -1367,6 +1420,8 @@
 				8F705DE51E8B3754008BE8F8 /* VRTPerfMonitor.mm */,
 				13F6301E2057616000A74EFC /* VRT3DSceneNavigatorModule.h */,
 				13F6302C205761B100A74EFC /* VRT3DSceneNavigatorModule.mm */,
+				E1F9E54F2FA39DEB00DBE1E8 /* VRTStudioModule.h */,
+				E1F9E5502FA39DEB00DBE1E8 /* VRTStudioModule.mm */,
 			);
 			name = Modules;
 			sourceTree = "<group>";
@@ -2044,6 +2099,48 @@
 			remoteRef = E1E0D36B2D544C9E00FDFE35 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
+		E1F9E5A72FA39DEC00DBE1E8 /* libRCTSwiftUI.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libRCTSwiftUI.a;
+			remoteRef = E1F9E5A62FA39DEC00DBE1E8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E1F9E5A92FA39DEC00DBE1E8 /* libRCTSwiftUIWrapper.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libRCTSwiftUIWrapper.a;
+			remoteRef = E1F9E5A82FA39DEC00DBE1E8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E1F9E5AB2FA39DEC00DBE1E8 /* libReact-intersectionobservernativemodule.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = "libReact-intersectionobservernativemodule.a";
+			remoteRef = E1F9E5AA2FA39DEC00DBE1E8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E1F9E5AD2FA39DEC00DBE1E8 /* libReact-networking.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = "libReact-networking.a";
+			remoteRef = E1F9E5AC2FA39DEC00DBE1E8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E1F9E5AF2FA39DEC00DBE1E8 /* libReact-performancecdpmetrics.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = "libReact-performancecdpmetrics.a";
+			remoteRef = E1F9E5AE2FA39DEC00DBE1E8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		E1F9E5B12FA39DEC00DBE1E8 /* libReact-webperformancenativemodule.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = "libReact-webperformancenativemodule.a";
+			remoteRef = E1F9E5B02FA39DEC00DBE1E8 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 /* End PBXReferenceProxy section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -2115,6 +2212,7 @@
 				8A130D811E3AAEA10050D83B /* VRTSound.mm in Sources */,
 				8BE0D50C1DFA3D9B0032AB99 /* VRTShadowFlexView.mm in Sources */,
 				8FEF00891F37D8DC006AE4B1 /* VRTPortal.mm in Sources */,
+				E1F9E5512FA39DEB00DBE1E8 /* VRTStudioModule.mm in Sources */,
 				8BE0D4F91DFA3D9B0032AB99 /* VRTAnimatedComponentShadowView.mm in Sources */,
 				8A82C1321F27D35C00736972 /* VRTARSceneNavigatorModule.mm in Sources */,
 				8BD950322058C6F200F8BB9E /* VRTMaterialVideoManager.mm in Sources */,
@@ -2180,17 +2278,17 @@
 				8BE0D5021DFA3D9B0032AB99 /* VRTText.mm in Sources */,
 				8A04D5182024F6B200FD5F68 /* VRTARImageMarkerManager.mm in Sources */,
 				8BE0D5261DFA3DEA0032AB99 /* VRTTreeNode.m in Sources */,
-				E139A8EB2E0B9C6A0050EC9A /* BuildFile in Sources */,
-				E139A8EC2E0B9C6A0050EC9A /* BuildFile in Sources */,
-				E139A8ED2E0B9C6A0050EC9A /* BuildFile in Sources */,
-				E139A8EE2E0B9C6A0050EC9A /* BuildFile in Sources */,
-				E139A8EF2E0B9C6A0050EC9A /* BuildFile in Sources */,
-				E139A8F02E0B9C6A0050EC9A /* BuildFile in Sources */,
-				E139A8F22E0B9C6A0050EC9A /* BuildFile in Sources */,
-				E139A8F32E0B9C6A0050EC9A /* BuildFile in Sources */,
-				E139A9402E0BAF2D0050EC9A /* BuildFile in Sources */,
-				E139A8F42E0B9C6A0050EC9A /* BuildFile in Sources */,
-				E139A8F52E0B9C6A0050EC9A /* BuildFile in Sources */,
+				E139A8EB2E0B9C6A0050EC9A /* (null) in Sources */,
+				E139A8EC2E0B9C6A0050EC9A /* (null) in Sources */,
+				E139A8ED2E0B9C6A0050EC9A /* (null) in Sources */,
+				E139A8EE2E0B9C6A0050EC9A /* (null) in Sources */,
+				E139A8EF2E0B9C6A0050EC9A /* (null) in Sources */,
+				E139A8F02E0B9C6A0050EC9A /* (null) in Sources */,
+				E139A8F22E0B9C6A0050EC9A /* (null) in Sources */,
+				E139A8F32E0B9C6A0050EC9A /* (null) in Sources */,
+				E139A9402E0BAF2D0050EC9A /* (null) in Sources */,
+				E139A8F42E0B9C6A0050EC9A /* (null) in Sources */,
+				E139A8F52E0B9C6A0050EC9A /* (null) in Sources */,
 				8A31CFB41E2705EC00550CFE /* VRTQuad.mm in Sources */,
 				8BE0D5101DFA3D9B0032AB99 /* VRTVideoSurface.mm in Sources */,
 				8A130D901E3BC0690050D83B /* VRTSoundManager.mm in Sources */,
@@ -2276,10 +2374,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_CPLUSPLUSFLAGS = "$(inherited)";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -2336,10 +2431,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				OTHER_CFLAGS = "$(inherited)";
 				OTHER_CPLUSPLUSFLAGS = "$(inherited)";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;

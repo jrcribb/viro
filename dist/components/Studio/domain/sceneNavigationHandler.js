@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.executeFunctionWithRelations = executeFunctionWithRelations;
 exports.executeOnLoadFunction = executeOnLoadFunction;
 const react_native_1 = require("react-native");
+const VRTStudioModule_1 = require("../VRTStudioModule");
 const ANIMATION_CHAIN_MAX_DEPTH = 10;
 /**
  * Resolves a scene function by ID from a flat list.
@@ -81,7 +82,7 @@ async function navigateToScene(sceneNavigator, targetSceneId, currentAnimations,
     }
     console.log(`[Studio] Navigating to scene: ${targetSceneId}`);
     try {
-        const result = await sceneNavigator.rvGetScene(targetSceneId);
+        const result = await VRTStudioModule_1.VRTStudioModule.rvGetScene(targetSceneId);
         if (!result?.success) {
             throw new Error(result?.error ?? "rvGetScene failed");
         }

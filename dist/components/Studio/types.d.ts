@@ -92,6 +92,39 @@ export interface StudioAnimation {
     on_start_function: string | null;
     on_finish_function: string | null;
 }
+export interface StudioProjectAsset {
+    id: string;
+    name: string | null;
+    url: string | null;
+}
+export interface StudioProjectSceneSummary {
+    id: string;
+    name: string | null;
+    created_at: string;
+    created_by: StudioSceneCreatedBy | null;
+    assets: StudioProjectAsset[];
+}
+export interface StudioProjectOpeningScene {
+    id: string;
+    name: string | null;
+}
+export interface StudioProjectOverview {
+    id: string;
+    name: string;
+    thumbnail: string | null;
+    occlusion_mode: "NONE" | "PEOPLEONLY" | "DEPTHBASED";
+    created_at: string;
+    created_by: StudioSceneCreatedBy | null;
+    opening_scene: StudioProjectOpeningScene | null;
+    scenes: StudioProjectSceneSummary[];
+}
+/** Top-level response from GET /functions/v1/projects/{project_id} (after JSON.parse) */
+export interface StudioProjectApiResponse {
+    project: StudioProjectOverview;
+    meta: {
+        request_id: string;
+    };
+}
 /** Top-level response from GET /functions/v1/scenes/{scene_id} (after JSON.parse) */
 export interface StudioSceneResponse {
     scene: StudioSceneMeta;

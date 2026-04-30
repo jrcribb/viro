@@ -47,6 +47,7 @@ exports.ViroARPlane = void 0;
 const ViroBase_1 = require("../ViroBase");
 const React = __importStar(require("react"));
 const react_native_1 = require("react-native");
+const ViroPlatform_1 = require("../Utilities/ViroPlatform");
 /**
  * Container for Viro Components anchored to a detected plane.
  */
@@ -67,6 +68,10 @@ class ViroARPlane extends ViroBase_1.ViroBase {
         }
     };
     render() {
+        if (ViroPlatform_1.isQuest) {
+            console.warn("[Viro] ViroARPlane is not supported on Quest and will not render.");
+            return null;
+        }
         // Uncomment this line to check for misnamed props
         //checkMisnamedProps("ViroARPlane", this.props);
         let timeToFuse = undefined;

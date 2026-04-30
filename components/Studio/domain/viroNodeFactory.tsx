@@ -146,7 +146,8 @@ function inferModelType(url: string): "GLB" | "GLTF" | "OBJ" | "VRX" {
 function create3DObject(
   asset: StudioAsset,
   config: NodeConfig,
-  onAssetLoaded?: (id: string) => void
+  onAssetLoaded?: (id: string) => void,
+  onCollision?: (viroTag: string, collidedPoint: [number, number, number], collidedNormal: [number, number, number]) => void
 ): React.ReactElement | null {
   if (!asset.file_url) {
     console.warn(`[Studio] 3D model "${asset.name}" has no file_url`);
@@ -187,6 +188,7 @@ function create3DObject(
       }
       {...(shaderOverrides ? { shaderOverrides } : {})}
       {...(config.physicsBody ? { physicsBody: config.physicsBody as any, viroTag: config.viroTag } : {})}
+      {...(onCollision ? { onCollision: onCollision as any } : {})}
     />
   );
 }
@@ -281,7 +283,8 @@ export function createNode(
   scene: StudioSceneMeta | null,
   onAnimationTrigger?: (targetAssetId: string, animKey: string) => void,
   animationStates?: Record<string, ViroAnimationProp>,
-  onAssetLoaded?: (id: string) => void
+  onAssetLoaded?: (id: string) => void,
+  onCollision?: (viroTag: string, collidedPoint: [number, number, number], collidedNormal: [number, number, number]) => void
 ): React.ReactElement | null {
   const type = resolveType(asset);
   const config = createNodeConfig(
@@ -295,7 +298,7 @@ export function createNode(
 
   switch (type) {
     case "3D-MODEL":
-      return create3DObject(asset, config, onAssetLoaded);
+      return create3DObject(asset, config, onAssetLoaded, onCollision);
     case "IMAGE":
       return createImage(asset, config, onAssetLoaded);
     case "TEXT":

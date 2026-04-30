@@ -1138,6 +1138,10 @@ export class ViroARSceneNavigator extends React.Component<Props, State> {
     );
   };
 
+  _rvGetProject = async (): Promise<any> => {
+    return await ViroARSceneNavigatorModule.rvGetProject(findNodeHandle(this));
+  };
+
   _rvGetScene = async (sceneId: string): Promise<any> => {
     return await ViroARSceneNavigatorModule.rvGetScene(
       findNodeHandle(this), sceneId
@@ -1439,6 +1443,7 @@ export class ViroARSceneNavigator extends React.Component<Props, State> {
     rvAttachAssetToCloudAnchor: this._rvAttachAssetToCloudAnchor,
     rvRemoveAssetFromCloudAnchor: this._rvRemoveAssetFromCloudAnchor,
     rvTrackCloudAnchorResolution: this._rvTrackCloudAnchorResolution,
+    rvGetProject: this._rvGetProject,
     rvGetScene: this._rvGetScene,
     rvGetSceneAssets: this._rvGetSceneAssets,
     // Assets API
@@ -1499,6 +1504,7 @@ export class ViroARSceneNavigator extends React.Component<Props, State> {
     rvAttachAssetToCloudAnchor: this._rvAttachAssetToCloudAnchor,
     rvRemoveAssetFromCloudAnchor: this._rvRemoveAssetFromCloudAnchor,
     rvTrackCloudAnchorResolution: this._rvTrackCloudAnchorResolution,
+    rvGetProject: this._rvGetProject,
     rvGetScene: this._rvGetScene,
     rvGetSceneAssets: this._rvGetSceneAssets,
     // Assets API

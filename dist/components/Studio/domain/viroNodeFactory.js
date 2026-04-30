@@ -128,7 +128,7 @@ function inferModelType(url) {
         return "VRX";
     return "GLB";
 }
-function create3DObject(asset, config, onAssetLoaded) {
+function create3DObject(asset, config, onAssetLoaded, onCollision) {
     if (!asset.file_url) {
         console.warn(`[Studio] 3D model "${asset.name}" has no file_url`);
         return null;
@@ -144,7 +144,7 @@ function create3DObject(asset, config, onAssetLoaded) {
         : config.scale;
     const hasMaterialConfig = (0, materialConfig_1.parseMaterialConfig)(asset.material_config) !== null;
     const shaderOverrides = hasMaterialConfig ? [(0, materialConfig_1.studioMaterialName)(asset.id)] : undefined;
-    return (<Viro3DObject_1.Viro3DObject key={asset.id} source={{ uri: asset.file_url }} position={config.position} rotation={config.rotation} scale={scale} type={modelType} dragType={config.dragType} dragPlane={config.dragPlane} animation={config.animation} onClick={config.onClick} renderingOrder={react_native_1.Platform.OS === "android" ? 1 : 0} onLoadEnd={() => onAssetLoaded?.(asset.id)} onError={(e) => console.error(`[Studio] 3D model "${asset.name}" error:`, e)} {...(shaderOverrides ? { shaderOverrides } : {})} {...(config.physicsBody ? { physicsBody: config.physicsBody, viroTag: config.viroTag } : {})}/>);
+    return (<Viro3DObject_1.Viro3DObject key={asset.id} source={{ uri: asset.file_url }} position={config.position} rotation={config.rotation} scale={scale} type={modelType} dragType={config.dragType} dragPlane={config.dragPlane} animation={config.animation} onClick={config.onClick} renderingOrder={react_native_1.Platform.OS === "android" ? 1 : 0} onLoadEnd={() => onAssetLoaded?.(asset.id)} onError={(e) => console.error(`[Studio] 3D model "${asset.name}" error:`, e)} {...(shaderOverrides ? { shaderOverrides } : {})} {...(config.physicsBody ? { physicsBody: config.physicsBody, viroTag: config.viroTag } : {})} {...(onCollision ? { onCollision: onCollision } : {})}/>);
 }
 function createImage(asset, config, onAssetLoaded) {
     if (!asset.file_url) {
@@ -171,12 +171,12 @@ function createVideo(asset, config) {
 /**
  * Creates the appropriate Viro component for a StudioAsset.
  */
-function createNode(asset, sceneNavigator, animations, scene, onAnimationTrigger, animationStates, onAssetLoaded) {
+function createNode(asset, sceneNavigator, animations, scene, onAnimationTrigger, animationStates, onAssetLoaded, onCollision) {
     const type = resolveType(asset);
     const config = createNodeConfig(asset, sceneNavigator, animations, scene, onAnimationTrigger, animationStates);
     switch (type) {
         case "3D-MODEL":
-            return create3DObject(asset, config, onAssetLoaded);
+            return create3DObject(asset, config, onAssetLoaded, onCollision);
         case "IMAGE":
             return createImage(asset, config, onAssetLoaded);
         case "TEXT":
