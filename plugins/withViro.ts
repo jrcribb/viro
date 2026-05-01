@@ -160,6 +160,15 @@ export interface ViroConfigurationOptions {
   };
   android?: {
     xRMode?: XrMode[];
+    /**
+     * Meta Developer Portal App ID (numeric string).
+     * Written to AndroidManifest as com.oculus.app_id meta-data.
+     * Eliminates the "App Name Unavailable" popup on Meta Quest.
+     *
+     * Get your App ID from the Meta Developer Portal:
+     * https://developer.oculus.com/manage
+     */
+    questAppId?: string;
   };
 }
 

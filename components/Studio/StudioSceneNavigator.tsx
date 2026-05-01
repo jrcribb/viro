@@ -1,10 +1,11 @@
 import * as React from "react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { StyleSheet, ViewStyle } from "react-native";
 import { ViroARScene } from "../AR/ViroARScene";
 import { ViroScene } from "../ViroScene";
 import { ViroXRSceneNavigator } from "../ViroXRSceneNavigator";
 import { isQuest } from "../Utilities/ViroPlatform";
+import { VRQuestNavigatorBridge } from "../Utilities/VRQuestNavigatorBridge";
 import { StudioARScene } from "./StudioARScene";
 import { StudioProjectApiResponse, StudioSceneResponse } from "./types";
 import { VRTStudioModule } from "./VRTStudioModule";
@@ -24,6 +25,7 @@ interface StudioSceneNavigatorProps {
   onSceneReady?: () => void;
   onError?: (err: Error) => void;
   onSceneChange?: (sceneId: string, sceneName: string) => void;
+  onExitViro?: () => void;
 }
 
 /**
@@ -43,9 +45,12 @@ export function StudioSceneNavigator({
   onSceneReady,
   onError,
   onSceneChange,
+  onExitViro,
 }: StudioSceneNavigatorProps) {
   const navigatorRef = useRef<any>(null);
   const loadedSceneIdRef = useRef<string | null>(null);
+  const sceneDataRef = useRef<StudioSceneResponse | null>(null);
+  const [vrRelaunchTick, setVrRelaunchTick] = useState(0);
 
   const onSceneReadyRef = useRef(onSceneReady);
   const onErrorRef = useRef(onError);
@@ -54,25 +59,36 @@ export function StudioSceneNavigator({
   onErrorRef.current = onError;
   onSceneChangeRef.current = onSceneChange;
 
-  const pushScene = useCallback((sceneData: StudioSceneResponse) => {
+  // On Quest relaunch: fire setVrRelaunchTick when viewTag goes null → non-null,
+  // meaning VRActivity has mounted a fresh ViroVRSceneNavigator and is ready.
+  useEffect(() => {
+    if (!isQuest) return;
+    let prevTag: number | null = VRQuestNavigatorBridge.getViewTag();
+    return VRQuestNavigatorBridge.onViewTag((tag) => {
+      if (prevTag === null && tag !== null) {
+        setVrRelaunchTick((t) => t + 1);
+      }
+      prevTag = tag;
+    });
+  }, []);
+
+  // On Quest: replace the top scene so the stack stays clean across relaunches.
+  // On AR:    push onto the navigator stack as before.
+  const applyScene = useCallback((sceneData: StudioSceneResponse) => {
+    const nav = navigatorRef.current?.arSceneNavigator;
+    if (!nav) return;
+    const sceneEntry = {
+      scene: StudioARScene,
+      passProps: {
+        sceneData,
+        onReady: onSceneReadyRef.current,
+        onSceneChange: onSceneChangeRef.current,
+      },
+    };
     if (isQuest) {
-      navigatorRef.current?.sceneNavigator?.push({
-        scene: StudioARScene,
-        passProps: {
-          sceneData,
-          onReady: onSceneReadyRef.current,
-          onSceneChange: onSceneChangeRef.current,
-        },
-      });
+      nav.replace(sceneEntry);
     } else {
-      navigatorRef.current?.arSceneNavigator?.push({
-        scene: StudioARScene,
-        passProps: {
-          sceneData,
-          onReady: onSceneReadyRef.current,
-          onSceneChange: onSceneChangeRef.current,
-        },
-      });
+      nav.push(sceneEntry);
     }
   }, []);
 
@@ -107,7 +123,11 @@ export function StudioSceneNavigator({
       const resolvedSceneId = await resolveSceneId();
       if (isCancelled()) return;
 
-      if (loadedSceneIdRef.current === resolvedSceneId) return;
+      // Scene already fetched — on Quest relaunch just re-apply to the fresh navigator.
+      if (loadedSceneIdRef.current === resolvedSceneId) {
+        if (sceneDataRef.current) applyScene(sceneDataRef.current);
+        return;
+      }
 
       const result = await VRTStudioModule.rvGetScene(resolvedSceneId);
       if (isCancelled()) return;
@@ -122,9 +142,10 @@ export function StudioSceneNavigator({
       if (isCancelled()) return;
 
       loadedSceneIdRef.current = resolvedSceneId;
-      pushScene(sceneData);
+      sceneDataRef.current = sceneData;
+      applyScene(sceneData);
     },
-    [resolveSceneId, pushScene]
+    [resolveSceneId, applyScene]
   );
 
   useEffect(() => {
@@ -140,7 +161,7 @@ export function StudioSceneNavigator({
     });
 
     return () => { cancelled = true; };
-  }, [sceneId, loadScene]);
+  }, [sceneId, loadScene, vrRelaunchTick]);
 
   return (
     <ViroXRSceneNavigator
@@ -149,6 +170,7 @@ export function StudioSceneNavigator({
       vrInitialScene={{ scene: LoadingVRScene }}
       worldAlignment={worldAlignment}
       autofocus={autofocus}
+      onExitViro={onExitViro}
       style={style ?? StyleSheet.absoluteFill}
     />
   );

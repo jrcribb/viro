@@ -6,11 +6,18 @@ type SceneFactory = {
 /**
  * Cross-reality scene navigator. Picks the right underlying navigator at runtime:
  *
- *  - **Meta Quest** → `ViroVRSceneNavigator`
- *  - **iOS / non-Quest Android** → `ViroARSceneNavigator`
+ *  - **iOS / non-Quest Android** → `ViroARSceneNavigator` (rendered inline)
+ *  - **Meta Quest** → launches VRActivity via `VRLauncher.launchVRScene()` and
+ *    forwards all navigator operations (push/pop/etc.) to the
+ *    `ViroVRSceneNavigator` running there via `VRQuestNavigatorBridge`.
+ *    Render output is null — VRActivity owns the display.
  *
  * Pass `arInitialScene` / `vrInitialScene` when the AR and VR scenes differ.
  * When only `initialScene` is provided it is used for both modes.
+ *
+ * Renderer flags (`hdrEnabled`, `pbrEnabled`, `bloomEnabled`, `shadowsEnabled`,
+ * `passthroughEnabled`, etc.) are forwarded to ViroVRSceneNavigator on Quest
+ * via the intent bridge.
  */
 export declare const ViroXRSceneNavigator: React.ForwardRefExoticComponent<ViewProps & {
     /**
@@ -21,13 +28,20 @@ export declare const ViroXRSceneNavigator: React.ForwardRefExoticComponent<ViewP
     initialScene?: SceneFactory;
     /** Scene mounted on iOS / non-Quest Android (rendered via ViroARSceneNavigator). */
     arInitialScene?: SceneFactory;
-    /** Scene mounted on Meta Quest (rendered via ViroVRSceneNavigator). */
+    /**
+     * Scene mounted on Meta Quest (rendered via ViroVRSceneNavigator in VRActivity).
+     * On Quest, this scene is forwarded to VRActivity via VRQuestNavigatorBridge
+     * rather than rendered inline, because OpenXR exclusive display requires the
+     * VR intent category on the host Activity.
+     */
     vrInitialScene?: SceneFactory;
     worldAlignment?: "Gravity" | "GravityAndHeading" | "Camera";
     autofocus?: boolean;
     videoQuality?: "High" | "Low";
     numberOfTrackedImages?: number;
     vrModeEnabled?: boolean;
+    passthroughEnabled?: boolean;
+    handTrackingEnabled?: boolean;
     onExitViro?: () => void;
     viroAppProps?: any;
     hdrEnabled?: boolean;

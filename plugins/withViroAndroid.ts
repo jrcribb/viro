@@ -451,7 +451,7 @@ const withViroManifest = (config: ExpoConfig) =>
  * the app must register via AppRegistry. Running in a separate Activity with the
  * VR intent category causes Horizon OS to grant exclusive OpenXR display access.
  */
-const withViroQuestActivity: ConfigPlugin<ViroConfigurationOptions> = (config) => {
+const withViroQuestActivity: ConfigPlugin<ViroConfigurationOptions> = (config, props) => {
   // Read xRMode directly from config.plugins. We cannot rely on the
   // module-level `viroPluginConfig` here: that variable is only updated
   // when `withBranchAndroid`'s withDangerousMod callback runs (mod-apply
@@ -604,6 +604,23 @@ class VRActivity : ReactActivity() {
           },
         ],
       });
+    }
+
+    // Inject com.oculus.app_id into <application> for Meta Quest App Name
+    const questAppId = props?.android?.questAppId;
+    if (questAppId) {
+      if (!app["meta-data"]) app["meta-data"] = [];
+      const alreadyHasAppId = (app["meta-data"] as any[]).some(
+        (m: any) => m.$?.["android:name"] === "com.oculus.app_id"
+      );
+      if (!alreadyHasAppId) {
+        (app["meta-data"] as any[]).push({
+          $: {
+            "android:name": "com.oculus.app_id",
+            "android:value": questAppId,
+          },
+        });
+      }
     }
 
     return config;

@@ -40,13 +40,6 @@ type Props = ViewProps & {
         scene: () => React.JSX.Element;
     };
     /**
-     * Optional fallback rendered when this navigator is mounted on a non-Quest
-     * device (where the only available VR backend is the deprecated Google
-     * Cardboard split-screen renderer). When omitted, a default message view is
-     * rendered. Pass `null` to render nothing.
-     */
-    nonQuestFallback?: React.ReactNode;
-    /**
      * Called when either the user physically decides to exit vr (hits
      * the "X" buton).
      */
@@ -76,9 +69,10 @@ type Props = ViewProps & {
 };
 /**
  * ViroVRSceneNavigator is used to transition between multiple scenes.
+ * Intended for OVR / Google Cardboard VR mode on non-Quest Android devices.
+ * On Meta Quest use ViroXRSceneNavigator instead.
  */
 export declare class ViroVRSceneNavigator extends React.Component<Props, State> {
-    static _nonQuestWarningLogged: boolean;
     _component: ViroNativeRef;
     /**
      * Called from native when either the user physically decides to exit vr (hits

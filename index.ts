@@ -175,6 +175,16 @@ import {
 import { ViroSurface } from "./components/ViroSurface";
 import { ViroSceneNavigator } from "./components/ViroSceneNavigator";
 import { VIRO_VERSION } from "./components/Utilities/ViroVersion";
+import { ViroQuestEntryPoint } from "./components/ViroQuestEntryPoint";
+import { VRQuestNavigatorBridge } from "./components/Utilities/VRQuestNavigatorBridge";
+import { VRModuleOpenXR, useVRViewTag, exitVRScene } from "./components/Utilities/VRModuleOpenXR";
+import type { VRModuleOpenXRType } from "./components/Utilities/VRModuleOpenXR";
+import { AppRegistry } from "react-native";
+
+// Auto-register the Quest VR entry point. VRActivity launches this component
+// as 'VRQuestScene'. Registering here means apps need no manual setup.
+// Apps that need a custom VR root can re-register after importing this package.
+AppRegistry.registerComponent("VRQuestScene", () => ViroQuestEntryPoint);
 
 export {
   ViroARImageMarker,
@@ -226,6 +236,12 @@ export {
   ViroVideo,
   ViroVRSceneNavigator,
   ViroXRSceneNavigator,
+  ViroQuestEntryPoint,
+  // Quest bridge — for custom VR roots and VRModuleOpenXR viewTag access
+  VRQuestNavigatorBridge,
+  VRModuleOpenXR,
+  useVRViewTag,
+  exitVRScene,
   Viro3DSceneNavigator,
   // Utilities
   hasOpenXRSupport,
@@ -347,6 +363,8 @@ export {
   StudioSceneNavigator,
   StudioARScene,
 };
+
+export type { VRModuleOpenXRType };
 
 export type {
   StudioSceneResponse,

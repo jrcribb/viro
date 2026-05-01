@@ -337,7 +337,7 @@ const withViroManifest = (config) => (0, config_plugins_1.withAndroidManifest)(c
  * the app must register via AppRegistry. Running in a separate Activity with the
  * VR intent category causes Horizon OS to grant exclusive OpenXR display access.
  */
-const withViroQuestActivity = (config) => {
+const withViroQuestActivity = (config, props) => {
     // Read xRMode directly from config.plugins. We cannot rely on the
     // module-level `viroPluginConfig` here: that variable is only updated
     // when `withBranchAndroid`'s withDangerousMod callback runs (mod-apply
@@ -388,12 +388,6 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
  * OpenXR display access. Mounts the "VRQuestScene" React root component.
  * Launch via NativeModules.VRLauncher.launchVRScene().
  *
- * Uses DefaultReactActivityDelegate directly (no ReactActivityDelegateWrapper).
- * The Expo wrapper is unnecessary for a VR-only activity that has no Expo
- * module lifecycle of its own. VRLauncherModule.launchVRScene() runs
- * dangerouslyForceOverride before startActivity, restoring the New Architecture
- * feature flags so DefaultReactActivityDelegate takes the bridgeless path.
- *
  * Mutual exclusion with MainActivity:
  *   Quest will happily run MainActivity (panel) and VRActivity (immersive) at
  *   the same time if the user taps the app icon in the dock while VR is
@@ -408,7 +402,17 @@ class VRActivity : ReactActivity() {
     override fun getMainComponentName(): String = "VRQuestScene"
 
     override fun createReactActivityDelegate(): ReactActivityDelegate =
-        DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
+        object : DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled) {
+            // Do not forward onResume/onPause to ReactHostImpl.
+            // VRActivity and MainActivity share the same ReactHostImpl singleton; if
+            // VRActivity calls onHostResume it displaces MainActivity as the "current"
+            // activity. When Android then calls MainActivity.onPause(), ReactHostImpl
+            // asserts "pausing an activity that is not the current activity" and crashes
+            // (RN <0.83 does not gate this assertion behind a feature flag).
+            // ViroView drives its own OpenXR render loop independently of this.
+            override fun onResume() {}
+            override fun onPause() {}
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -467,6 +471,21 @@ class VRActivity : ReactActivity() {
                     },
                 ],
             });
+        }
+        // Inject com.oculus.app_id into <application> for Meta Quest App Name
+        const questAppId = props?.android?.questAppId;
+        if (questAppId) {
+            if (!app["meta-data"])
+                app["meta-data"] = [];
+            const alreadyHasAppId = app["meta-data"].some((m) => m.$?.["android:name"] === "com.oculus.app_id");
+            if (!alreadyHasAppId) {
+                app["meta-data"].push({
+                    $: {
+                        "android:name": "com.oculus.app_id",
+                        "android:value": questAppId,
+                    },
+                });
+            }
         }
         return config;
     });

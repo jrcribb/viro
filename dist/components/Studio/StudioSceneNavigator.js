@@ -40,7 +40,6 @@ const react_native_1 = require("react-native");
 const ViroARScene_1 = require("../AR/ViroARScene");
 const ViroScene_1 = require("../ViroScene");
 const ViroXRSceneNavigator_1 = require("../ViroXRSceneNavigator");
-const ViroPlatform_1 = require("../Utilities/ViroPlatform");
 const StudioARScene_1 = require("./StudioARScene");
 const VRTStudioModule_1 = require("./VRTStudioModule");
 function LoadingARScene() { return <ViroARScene_1.ViroARScene />; }
@@ -64,26 +63,14 @@ function StudioSceneNavigator({ sceneId, worldAlignment = "Gravity", autofocus =
     onErrorRef.current = onError;
     onSceneChangeRef.current = onSceneChange;
     const pushScene = (0, react_1.useCallback)((sceneData) => {
-        if (ViroPlatform_1.isQuest) {
-            navigatorRef.current?.sceneNavigator?.push({
-                scene: StudioARScene_1.StudioARScene,
-                passProps: {
-                    sceneData,
-                    onReady: onSceneReadyRef.current,
-                    onSceneChange: onSceneChangeRef.current,
-                },
-            });
-        }
-        else {
-            navigatorRef.current?.arSceneNavigator?.push({
-                scene: StudioARScene_1.StudioARScene,
-                passProps: {
-                    sceneData,
-                    onReady: onSceneReadyRef.current,
-                    onSceneChange: onSceneChangeRef.current,
-                },
-            });
-        }
+        navigatorRef.current?.arSceneNavigator?.push({
+            scene: StudioARScene_1.StudioARScene,
+            passProps: {
+                sceneData,
+                onReady: onSceneReadyRef.current,
+                onSceneChange: onSceneChangeRef.current,
+            },
+        });
     }, []);
     const resolveSceneId = (0, react_1.useCallback)(async () => {
         if (sceneId)
