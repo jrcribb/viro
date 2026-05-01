@@ -34,7 +34,8 @@ export function createNodeConfig(
   animations: StudioAnimation[],
   scene: StudioSceneMeta | null,
   onAnimationTrigger?: (targetAssetId: string, animKey: string) => void,
-  animationStates?: Record<string, ViroAnimationProp>
+  animationStates?: Record<string, ViroAnimationProp>,
+  onSceneChange?: (sceneId: string, sceneName: string) => void
 ): NodeConfig {
   const hasTriggerImage = !!asset.trigger_image_url;
 
@@ -93,7 +94,8 @@ export function createNodeConfig(
     asset,
     sceneNavigator,
     animations,
-    onAnimationTrigger
+    onAnimationTrigger,
+    onSceneChange
   );
 
   const animation = animationStates?.[asset.id];
@@ -105,7 +107,8 @@ function createOnClickHandler(
   asset: StudioAsset,
   sceneNavigator: SceneNavigator | undefined,
   animations: StudioAnimation[],
-  onAnimationTrigger?: (targetAssetId: string, animKey: string) => void
+  onAnimationTrigger?: (targetAssetId: string, animKey: string) => void,
+  onSceneChange?: (sceneId: string, sceneName: string) => void
 ): (() => void) | undefined {
   const fn = asset.scene_function;
   if (!fn) return undefined;
@@ -124,7 +127,7 @@ function createOnClickHandler(
   }
 
   return () =>
-    executeFunctionWithRelations(fn, sceneNavigator, animations, onAnimationTrigger);
+    executeFunctionWithRelations(fn, sceneNavigator, animations, onAnimationTrigger, 0, onSceneChange);
 }
 
 /** Resolves asset type from asset_type_name. */
@@ -284,7 +287,8 @@ export function createNode(
   onAnimationTrigger?: (targetAssetId: string, animKey: string) => void,
   animationStates?: Record<string, ViroAnimationProp>,
   onAssetLoaded?: (id: string) => void,
-  onCollision?: (viroTag: string, collidedPoint: [number, number, number], collidedNormal: [number, number, number]) => void
+  onCollision?: (viroTag: string, collidedPoint: [number, number, number], collidedNormal: [number, number, number]) => void,
+  onSceneChange?: (sceneId: string, sceneName: string) => void
 ): React.ReactElement | null {
   const type = resolveType(asset);
   const config = createNodeConfig(
@@ -293,7 +297,8 @@ export function createNode(
     animations,
     scene,
     onAnimationTrigger,
-    animationStates
+    animationStates,
+    onSceneChange
   );
 
   switch (type) {

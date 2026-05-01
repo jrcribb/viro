@@ -1,17 +1,28 @@
 import * as React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { StyleSheet, ViewStyle } from "react-native";
+import { ActivityIndicator, StyleSheet, View, ViewStyle } from "react-native";
 import { ViroARScene } from "../AR/ViroARScene";
 import { ViroScene } from "../ViroScene";
 import { ViroXRSceneNavigator } from "../ViroXRSceneNavigator";
 import { isQuest } from "../Utilities/ViroPlatform";
-import { VRQuestNavigatorBridge } from "../Utilities/VRQuestNavigatorBridge";
+import { registerSceneAnimations } from "./domain/animationRegistry";
+import { registerStudioMaterialsForAssets } from "./domain/studioMaterials";
 import { StudioARScene } from "./StudioARScene";
 import { StudioProjectApiResponse, StudioSceneResponse } from "./types";
 import { VRTStudioModule } from "./VRTStudioModule";
 
 function LoadingARScene() { return <ViroARScene />; }
 function LoadingVRScene() { return <ViroScene />; }
+
+const styles = StyleSheet.create({
+  loader: {
+    position: "absolute",
+    top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#000000",
+  },
+});
 
 interface StudioSceneNavigatorProps {
   /**
@@ -36,6 +47,10 @@ interface StudioSceneNavigatorProps {
  *   1. `sceneId` prop → use it directly
  *   2. Native project (RVProjectId from manifest) → use `opening_scene.id`
  *   3. Fallback → first scene in the project's scene list
+ *
+ * On Quest, ViroXRSceneNavigator is not rendered until the scene data is
+ * ready. This means VRActivity always launches with the actual content scene
+ * as its initial scene, avoiding the LoadingVRScene → replace timing race.
  */
 export function StudioSceneNavigator({
   sceneId,
@@ -49,8 +64,6 @@ export function StudioSceneNavigator({
 }: StudioSceneNavigatorProps) {
   const navigatorRef = useRef<any>(null);
   const loadedSceneIdRef = useRef<string | null>(null);
-  const sceneDataRef = useRef<StudioSceneResponse | null>(null);
-  const [vrRelaunchTick, setVrRelaunchTick] = useState(0);
 
   const onSceneReadyRef = useRef(onSceneReady);
   const onErrorRef = useRef(onError);
@@ -59,38 +72,9 @@ export function StudioSceneNavigator({
   onErrorRef.current = onError;
   onSceneChangeRef.current = onSceneChange;
 
-  // On Quest relaunch: fire setVrRelaunchTick when viewTag goes null → non-null,
-  // meaning VRActivity has mounted a fresh ViroVRSceneNavigator and is ready.
-  useEffect(() => {
-    if (!isQuest) return;
-    let prevTag: number | null = VRQuestNavigatorBridge.getViewTag();
-    return VRQuestNavigatorBridge.onViewTag((tag) => {
-      if (prevTag === null && tag !== null) {
-        setVrRelaunchTick((t) => t + 1);
-      }
-      prevTag = tag;
-    });
-  }, []);
-
-  // On Quest: replace the top scene so the stack stays clean across relaunches.
-  // On AR:    push onto the navigator stack as before.
-  const applyScene = useCallback((sceneData: StudioSceneResponse) => {
-    const nav = navigatorRef.current?.arSceneNavigator;
-    if (!nav) return;
-    const sceneEntry = {
-      scene: StudioARScene,
-      passProps: {
-        sceneData,
-        onReady: onSceneReadyRef.current,
-        onSceneChange: onSceneChangeRef.current,
-      },
-    };
-    if (isQuest) {
-      nav.replace(sceneEntry);
-    } else {
-      nav.push(sceneEntry);
-    }
-  }, []);
+  // On Quest: holds the resolved scene entry. ViroXRSceneNavigator is not
+  // rendered until this is non-null, so VRActivity always launches into content.
+  const [vrSceneEntry, setVrSceneEntry] = useState<{ scene: any; passProps?: any } | null>(null);
 
   const resolveSceneId = useCallback(async (): Promise<string> => {
     if (sceneId) return sceneId;
@@ -116,18 +100,13 @@ export function StudioSceneNavigator({
 
   const loadScene = useCallback(
     async (isCancelled: () => boolean) => {
-      // Wait one frame to ensure the native view is mounted.
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
       if (isCancelled()) return;
 
       const resolvedSceneId = await resolveSceneId();
       if (isCancelled()) return;
 
-      // Scene already fetched — on Quest relaunch just re-apply to the fresh navigator.
-      if (loadedSceneIdRef.current === resolvedSceneId) {
-        if (sceneDataRef.current) applyScene(sceneDataRef.current);
-        return;
-      }
+      if (loadedSceneIdRef.current === resolvedSceneId) return;
 
       const result = await VRTStudioModule.rvGetScene(resolvedSceneId);
       if (isCancelled()) return;
@@ -142,10 +121,35 @@ export function StudioSceneNavigator({
       if (isCancelled()) return;
 
       loadedSceneIdRef.current = resolvedSceneId;
-      sceneDataRef.current = sceneData;
-      applyScene(sceneData);
+
+      // On Quest: pre-register animations and materials before VRActivity launches.
+      // This mirrors the module-level registration pattern used by XRSceneContent —
+      // native registrations complete before any Viro components mount, eliminating
+      // the race between registerAnimations/createMaterials native calls and the
+      // Fabric commit that creates those components.
+      if (isQuest) {
+        registerSceneAnimations(sceneData.animations);
+        registerStudioMaterialsForAssets(sceneData.assets);
+      }
+
+      const entry = {
+        scene: StudioARScene,
+        passProps: {
+          sceneData,
+          onReady: onSceneReadyRef.current,
+          onSceneChange: onSceneChangeRef.current,
+        },
+      };
+
+      if (isQuest) {
+        // On Quest: setting vrSceneEntry triggers ViroXRSceneNavigator to mount
+        // with StudioARScene as vrInitialScene — VRActivity gets content immediately.
+        setVrSceneEntry(entry);
+      } else {
+        navigatorRef.current?.arSceneNavigator?.push(entry);
+      }
     },
-    [resolveSceneId, applyScene]
+    [resolveSceneId]
   );
 
   useEffect(() => {
@@ -161,13 +165,23 @@ export function StudioSceneNavigator({
     });
 
     return () => { cancelled = true; };
-  }, [sceneId, loadScene, vrRelaunchTick]);
+  }, [sceneId, loadScene]);
+
+  // On Quest: show a spinner until scene data is ready, then mount
+  // ViroXRSceneNavigator (which launches VRActivity with content immediately).
+  if (isQuest && !vrSceneEntry) {
+    return (
+      <View style={styles.loader}>
+        <ActivityIndicator size="large" color="#ffffff" />
+      </View>
+    );
+  }
 
   return (
     <ViroXRSceneNavigator
       ref={navigatorRef}
       arInitialScene={{ scene: LoadingARScene }}
-      vrInitialScene={{ scene: LoadingVRScene }}
+      vrInitialScene={vrSceneEntry ?? { scene: LoadingVRScene }}
       worldAlignment={worldAlignment}
       autofocus={autofocus}
       onExitViro={onExitViro}

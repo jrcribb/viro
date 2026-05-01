@@ -44,6 +44,7 @@ const ViroARPlaneSelector_1 = require("../AR/ViroARPlaneSelector");
 const ViroARScene_1 = require("../AR/ViroARScene");
 const ViroScene_1 = require("../ViroScene");
 const ViroText_1 = require("../ViroText");
+const ViroController_1 = require("../ViroController");
 const ViroPlatform_1 = require("../Utilities/ViroPlatform");
 const animationRegistry_1 = require("./domain/animationRegistry");
 const collisionBindingsRuntime_1 = require("./domain/collisionBindingsRuntime");
@@ -232,10 +233,10 @@ const StudioARSceneInner = (props) => {
                     return null;
                 }
             }
-            return (0, viroNodeFactory_1.createNode)(asset, sceneNavigator, animations, scene, (id, key) => triggerAnimationRef.current(id, key), animationStates, handleAssetLoaded, getCollisionHandler(asset.id));
+            return (0, viroNodeFactory_1.createNode)(asset, sceneNavigator, animations, scene, (id, key) => triggerAnimationRef.current(id, key), animationStates, handleAssetLoaded, getCollisionHandler(asset.id), onSceneChange);
         })
             .filter(Boolean);
-    }, [planeAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler, maxModels]);
+    }, [planeAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler, maxModels, onSceneChange]);
     const renderedImageTriggeredAssets = (0, react_1.useMemo)(() => {
         if (ViroPlatform_1.isQuest)
             return [];
@@ -244,7 +245,7 @@ const StudioARSceneInner = (props) => {
             const targetName = urlToTargetName.get(asset.trigger_image_url);
             if (!targetName)
                 return null;
-            const node = (0, viroNodeFactory_1.createNode)(asset, sceneNavigator, animations, scene, (id, key) => triggerAnimationRef.current(id, key), animationStates, handleAssetLoaded, getCollisionHandler(asset.id));
+            const node = (0, viroNodeFactory_1.createNode)(asset, sceneNavigator, animations, scene, (id, key) => triggerAnimationRef.current(id, key), animationStates, handleAssetLoaded, getCollisionHandler(asset.id), onSceneChange);
             if (!node)
                 return null;
             return (<ViroARImageMarker_1.ViroARImageMarker key={asset.id} target={targetName}>
@@ -252,7 +253,7 @@ const StudioARSceneInner = (props) => {
           </ViroARImageMarker_1.ViroARImageMarker>);
         })
             .filter(Boolean);
-    }, [urlToTargetName, imageTriggeredAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler]);
+    }, [urlToTargetName, imageTriggeredAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler, onSceneChange]);
     // ─── Plane detection (AR only) ────────────────────────────────────────────
     const planeDetectionMode = (scene.plane_detection ?? "NONE").toUpperCase();
     const planeAlignment = (scene.plane_direction ?? "Horizontal");
@@ -283,6 +284,7 @@ const StudioARSceneInner = (props) => {
     const physicsProps = physicsWorld ? { physicsWorld: physicsWorld } : {};
     // ─── Render ───────────────────────────────────────────────────────────────
     const children = (<>
+      {ViroPlatform_1.isQuest && <ViroController_1.ViroController controllerVisibility reticleVisibility/>}
       <ViroAmbientLight_1.ViroAmbientLight color="#ffffff" intensity={1000}/>
       {renderAssets()}
       {renderedImageTriggeredAssets}

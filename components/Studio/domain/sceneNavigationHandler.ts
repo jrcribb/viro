@@ -1,4 +1,5 @@
 import { Alert } from "react-native";
+import { isQuest } from "../../Utilities/ViroPlatform";
 import { StudioAnimation, StudioSceneFunction, StudioSceneResponse } from "../types";
 import { VRTStudioModule } from "../VRTStudioModule";
 
@@ -54,6 +55,14 @@ export function executeFunctionWithRelations(
   } else if (fn.function_type === "ALERT") {
     const alrt = fn.scene_alert;
     if (!alrt) return;
+    if (isQuest) {
+      // Alert.alert shows a 2D panel dialog — invisible in the VR compositor.
+      // Log it so it's not silently swallowed; in-scene VR alert UI is a TODO.
+      console.warn(
+        `[Studio] Alert (Quest — not shown in VR): "${alrt.alert_title}" — ${alrt.alert_message}`
+      );
+      return;
+    }
     Alert.alert(alrt.alert_title ?? "Alert", alrt.alert_message ?? "", [
       { text: "OK", style: "default" },
     ]);
@@ -61,12 +70,8 @@ export function executeFunctionWithRelations(
     const anim = fn.scene_animation;
     if (!anim || !onAnimationTrigger) return;
 
-    // The inline scene_animation has `id` but not `target_asset_id` —
-    // resolve it from the top-level animations array via the animation UUID.
-    const targetAssetId = resolveAnimationTargetAssetId(
-      fn.animation ?? anim.id,
-      animations
-    );
+    const animLookupId = fn.animation ?? anim.id;
+    const targetAssetId = resolveAnimationTargetAssetId(animLookupId, animations);
     if (!targetAssetId) {
       console.warn(
         `[Studio] ANIMATION function ${fn.id}: could not resolve target_asset_id for animation ${anim.id}`

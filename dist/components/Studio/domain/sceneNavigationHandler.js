@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.executeFunctionWithRelations = executeFunctionWithRelations;
 exports.executeOnLoadFunction = executeOnLoadFunction;
 const react_native_1 = require("react-native");
+const ViroPlatform_1 = require("../../Utilities/ViroPlatform");
 const VRTStudioModule_1 = require("../VRTStudioModule");
 const ANIMATION_CHAIN_MAX_DEPTH = 10;
 /**
@@ -38,6 +39,12 @@ function executeFunctionWithRelations(fn, sceneNavigator, animations, onAnimatio
         const alrt = fn.scene_alert;
         if (!alrt)
             return;
+        if (ViroPlatform_1.isQuest) {
+            // Alert.alert shows a 2D panel dialog — invisible in the VR compositor.
+            // Log it so it's not silently swallowed; in-scene VR alert UI is a TODO.
+            console.warn(`[Studio] Alert (Quest — not shown in VR): "${alrt.alert_title}" — ${alrt.alert_message}`);
+            return;
+        }
         react_native_1.Alert.alert(alrt.alert_title ?? "Alert", alrt.alert_message ?? "", [
             { text: "OK", style: "default" },
         ]);
@@ -46,9 +53,8 @@ function executeFunctionWithRelations(fn, sceneNavigator, animations, onAnimatio
         const anim = fn.scene_animation;
         if (!anim || !onAnimationTrigger)
             return;
-        // The inline scene_animation has `id` but not `target_asset_id` —
-        // resolve it from the top-level animations array via the animation UUID.
-        const targetAssetId = resolveAnimationTargetAssetId(fn.animation ?? anim.id, animations);
+        const animLookupId = fn.animation ?? anim.id;
+        const targetAssetId = resolveAnimationTargetAssetId(animLookupId, animations);
         if (!targetAssetId) {
             console.warn(`[Studio] ANIMATION function ${fn.id}: could not resolve target_asset_id for animation ${anim.id}`);
             return;

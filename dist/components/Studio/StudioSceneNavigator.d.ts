@@ -12,6 +12,7 @@ interface StudioSceneNavigatorProps {
     onSceneReady?: () => void;
     onError?: (err: Error) => void;
     onSceneChange?: (sceneId: string, sceneName: string) => void;
+    onExitViro?: () => void;
 }
 /**
  * Cross-reality Studio scene navigator. Renders a Studio-authored scene on
@@ -21,6 +22,10 @@ interface StudioSceneNavigatorProps {
  *   1. `sceneId` prop → use it directly
  *   2. Native project (RVProjectId from manifest) → use `opening_scene.id`
  *   3. Fallback → first scene in the project's scene list
+ *
+ * On Quest, ViroXRSceneNavigator is not rendered until the scene data is
+ * ready. This means VRActivity always launches with the actual content scene
+ * as its initial scene, avoiding the LoadingVRScene → replace timing race.
  */
-export declare function StudioSceneNavigator({ sceneId, worldAlignment, autofocus, style, onSceneReady, onError, onSceneChange, }: StudioSceneNavigatorProps): React.JSX.Element;
+export declare function StudioSceneNavigator({ sceneId, worldAlignment, autofocus, style, onSceneReady, onError, onSceneChange, onExitViro, }: StudioSceneNavigatorProps): React.JSX.Element;
 export {};

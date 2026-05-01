@@ -14,6 +14,7 @@ import { ViroARPlaneSelector } from "../AR/ViroARPlaneSelector";
 import { ViroARScene } from "../AR/ViroARScene";
 import { ViroScene } from "../ViroScene";
 import { ViroText } from "../ViroText";
+import { ViroController } from "../ViroController";
 import { isQuest } from "../Utilities/ViroPlatform";
 import { registerSceneAnimations } from "./domain/animationRegistry";
 import { createPlacementCollisionHandler } from "./domain/collisionBindingsRuntime";
@@ -271,10 +272,11 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
           animationStates,
           handleAssetLoaded,
           getCollisionHandler(asset.id),
+          onSceneChange,
         );
       })
       .filter(Boolean) as React.ReactElement[];
-  }, [planeAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler, maxModels]);
+  }, [planeAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler, maxModels, onSceneChange]);
 
   const renderedImageTriggeredAssets = useMemo(() => {
     if (isQuest) return [];
@@ -291,6 +293,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
           animationStates,
           handleAssetLoaded,
           getCollisionHandler(asset.id),
+          onSceneChange,
         );
         if (!node) return null;
         return (
@@ -300,7 +303,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
         );
       })
       .filter(Boolean) as React.ReactElement[];
-  }, [urlToTargetName, imageTriggeredAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler]);
+  }, [urlToTargetName, imageTriggeredAssets, sceneNavigator, animations, animationStates, handleAssetLoaded, getCollisionHandler, onSceneChange]);
 
   // ─── Plane detection (AR only) ────────────────────────────────────────────
   const planeDetectionMode = ((scene.plane_detection as string) ?? "NONE").toUpperCase();
@@ -342,6 +345,7 @@ const StudioARSceneInner: React.FC<StudioARSceneInnerProps> = (props) => {
   // ─── Render ───────────────────────────────────────────────────────────────
   const children = (
     <>
+      {isQuest && <ViroController controllerVisibility reticleVisibility />}
       <ViroAmbientLight color="#ffffff" intensity={1000} />
       {renderAssets()}
       {renderedImageTriggeredAssets}

@@ -40,10 +40,22 @@ const react_native_1 = require("react-native");
 const ViroARScene_1 = require("../AR/ViroARScene");
 const ViroScene_1 = require("../ViroScene");
 const ViroXRSceneNavigator_1 = require("../ViroXRSceneNavigator");
+const ViroPlatform_1 = require("../Utilities/ViroPlatform");
+const animationRegistry_1 = require("./domain/animationRegistry");
+const studioMaterials_1 = require("./domain/studioMaterials");
 const StudioARScene_1 = require("./StudioARScene");
 const VRTStudioModule_1 = require("./VRTStudioModule");
 function LoadingARScene() { return <ViroARScene_1.ViroARScene />; }
 function LoadingVRScene() { return <ViroScene_1.ViroScene />; }
+const styles = react_native_1.StyleSheet.create({
+    loader: {
+        position: "absolute",
+        top: 0, left: 0, right: 0, bottom: 0,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#000000",
+    },
+});
 /**
  * Cross-reality Studio scene navigator. Renders a Studio-authored scene on
  * both AR devices (iOS / non-Quest Android) and Meta Quest (VR).
@@ -52,8 +64,12 @@ function LoadingVRScene() { return <ViroScene_1.ViroScene />; }
  *   1. `sceneId` prop → use it directly
  *   2. Native project (RVProjectId from manifest) → use `opening_scene.id`
  *   3. Fallback → first scene in the project's scene list
+ *
+ * On Quest, ViroXRSceneNavigator is not rendered until the scene data is
+ * ready. This means VRActivity always launches with the actual content scene
+ * as its initial scene, avoiding the LoadingVRScene → replace timing race.
  */
-function StudioSceneNavigator({ sceneId, worldAlignment = "Gravity", autofocus = true, style, onSceneReady, onError, onSceneChange, }) {
+function StudioSceneNavigator({ sceneId, worldAlignment = "Gravity", autofocus = true, style, onSceneReady, onError, onSceneChange, onExitViro, }) {
     const navigatorRef = (0, react_1.useRef)(null);
     const loadedSceneIdRef = (0, react_1.useRef)(null);
     const onSceneReadyRef = (0, react_1.useRef)(onSceneReady);
@@ -62,16 +78,9 @@ function StudioSceneNavigator({ sceneId, worldAlignment = "Gravity", autofocus =
     onSceneReadyRef.current = onSceneReady;
     onErrorRef.current = onError;
     onSceneChangeRef.current = onSceneChange;
-    const pushScene = (0, react_1.useCallback)((sceneData) => {
-        navigatorRef.current?.arSceneNavigator?.push({
-            scene: StudioARScene_1.StudioARScene,
-            passProps: {
-                sceneData,
-                onReady: onSceneReadyRef.current,
-                onSceneChange: onSceneChangeRef.current,
-            },
-        });
-    }, []);
+    // On Quest: holds the resolved scene entry. ViroXRSceneNavigator is not
+    // rendered until this is non-null, so VRActivity always launches into content.
+    const [vrSceneEntry, setVrSceneEntry] = (0, react_1.useState)(null);
     const resolveSceneId = (0, react_1.useCallback)(async () => {
         if (sceneId)
             return sceneId;
@@ -92,7 +101,6 @@ function StudioSceneNavigator({ sceneId, worldAlignment = "Gravity", autofocus =
         throw new Error(`Project ${project.id} has no scenes`);
     }, [sceneId]);
     const loadScene = (0, react_1.useCallback)(async (isCancelled) => {
-        // Wait one frame to ensure the native view is mounted.
         await new Promise((resolve) => requestAnimationFrame(() => resolve()));
         if (isCancelled())
             return;
@@ -114,8 +122,32 @@ function StudioSceneNavigator({ sceneId, worldAlignment = "Gravity", autofocus =
         if (isCancelled())
             return;
         loadedSceneIdRef.current = resolvedSceneId;
-        pushScene(sceneData);
-    }, [resolveSceneId, pushScene]);
+        // On Quest: pre-register animations and materials before VRActivity launches.
+        // This mirrors the module-level registration pattern used by XRSceneContent —
+        // native registrations complete before any Viro components mount, eliminating
+        // the race between registerAnimations/createMaterials native calls and the
+        // Fabric commit that creates those components.
+        if (ViroPlatform_1.isQuest) {
+            (0, animationRegistry_1.registerSceneAnimations)(sceneData.animations);
+            (0, studioMaterials_1.registerStudioMaterialsForAssets)(sceneData.assets);
+        }
+        const entry = {
+            scene: StudioARScene_1.StudioARScene,
+            passProps: {
+                sceneData,
+                onReady: onSceneReadyRef.current,
+                onSceneChange: onSceneChangeRef.current,
+            },
+        };
+        if (ViroPlatform_1.isQuest) {
+            // On Quest: setting vrSceneEntry triggers ViroXRSceneNavigator to mount
+            // with StudioARScene as vrInitialScene — VRActivity gets content immediately.
+            setVrSceneEntry(entry);
+        }
+        else {
+            navigatorRef.current?.arSceneNavigator?.push(entry);
+        }
+    }, [resolveSceneId]);
     (0, react_1.useEffect)(() => {
         let cancelled = false;
         const isCancelled = () => cancelled;
@@ -131,5 +163,12 @@ function StudioSceneNavigator({ sceneId, worldAlignment = "Gravity", autofocus =
         });
         return () => { cancelled = true; };
     }, [sceneId, loadScene]);
-    return (<ViroXRSceneNavigator_1.ViroXRSceneNavigator ref={navigatorRef} arInitialScene={{ scene: LoadingARScene }} vrInitialScene={{ scene: LoadingVRScene }} worldAlignment={worldAlignment} autofocus={autofocus} style={style ?? react_native_1.StyleSheet.absoluteFill}/>);
+    // On Quest: show a spinner until scene data is ready, then mount
+    // ViroXRSceneNavigator (which launches VRActivity with content immediately).
+    if (ViroPlatform_1.isQuest && !vrSceneEntry) {
+        return (<react_native_1.View style={styles.loader}>
+        <react_native_1.ActivityIndicator size="large" color="#ffffff"/>
+      </react_native_1.View>);
+    }
+    return (<ViroXRSceneNavigator_1.ViroXRSceneNavigator ref={navigatorRef} arInitialScene={{ scene: LoadingARScene }} vrInitialScene={vrSceneEntry ?? { scene: LoadingVRScene }} worldAlignment={worldAlignment} autofocus={autofocus} onExitViro={onExitViro} style={style ?? react_native_1.StyleSheet.absoluteFill}/>);
 }
