@@ -30,7 +30,7 @@ import android.widget.FrameLayout;
 
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactContext;
-import com.facebook.react.uimanager.events.RCTEventEmitter;
+import com.viromedia.bridge.utility.ViroEventEmitter;
 import com.viro.core.RendererConfiguration;
 import com.viro.core.ViroContext;
 
@@ -355,7 +355,17 @@ public class VRT3DSceneNavigator extends FrameLayout {
             childScene.onHostResume();
         }
 
-        if (mViroView != null){
+        // Skip the cascade for ViroViewOpenXR (Quest dual-Activity).
+        // ViroViewOpenXR subscribes to Application.ActivityLifecycleCallbacks
+        // directly (see ViroViewOpenXR.init), so it already receives the real
+        // VRActivity onResume from Android. The React-host cascade here would
+        // pass mReactContext.getCurrentActivity() — which after VR.onResume is
+        // VRActivity even when the host is transitioning because of MainActivity.
+        // That triggers a false mNativeRenderer.onResume() following an equally
+        // false onPause() from the matching cascade in onHostPause, cycling the
+        // OpenXR render thread on every ReactHost lifecycle change and producing
+        // visible scene flicker in dual-Activity Quest setups.
+        if (mViroView != null && !(mViroView instanceof com.viro.core.ViroViewOpenXR)) {
             mViroView.onActivityResumed(mReactContext.getCurrentActivity());
         }
     }
@@ -366,7 +376,10 @@ public class VRT3DSceneNavigator extends FrameLayout {
             childScene.onHostPause();
         }
 
-        if (mViroView != null){
+        // See onHostResume above — same false-cascade rationale. ViroViewOpenXR
+        // ignores this path and uses Application.ActivityLifecycleCallbacks for
+        // real VRActivity pause events.
+        if (mViroView != null && !(mViroView instanceof com.viro.core.ViroViewOpenXR)) {
             mViroView.onActivityPaused(mReactContext.getCurrentActivity());
         }
     }
@@ -382,10 +395,7 @@ public class VRT3DSceneNavigator extends FrameLayout {
         }
 
         // Notify javascript listeners (for ReactNativeJs to ViroReactJs cases)
-        mReactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
-                getId(),
-                ViroEvents.ON_EXIT_VIRO,
-                null);
+        ViroEventEmitter.emit(mReactContext, getId(), ViroEvents.ON_EXIT_VIRO, null);
 
         // Notify Native listeners (for NativeApp to ViroReactJs cases)
         Intent intent = new Intent();

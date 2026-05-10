@@ -12,10 +12,14 @@ Pod::Spec.new do |s|
   s.author              = 'ReactVision'
   s.requires_arc        = true
   s.platform            = :ios, '12.0'
-  s.ios.deployment_target = '12.0'
-  
+  s.ios.deployment_target     = '12.0'
+  s.visionos.deployment_target = '1.0'
+
+  # visionOS: CompositorServices drives the immersive render loop.
+  s.visionos.frameworks = ['Metal', 'MetalKit', 'CompositorServices', 'ARKit']
+
   # Base source files (always included)
-  source_files_array = ['ViroReact/**/*.{h,m,mm}']
+  source_files_array = ['ViroReact/**/*.{h,m,mm,swift}']
   header_files_array = ['ViroReact/**/*.h']
   
   # Include dist files if they exist (for release builds)
@@ -26,7 +30,12 @@ Pod::Spec.new do |s|
   
   s.source_files        = source_files_array
   s.public_header_files = header_files_array
-  
+
+  # visionOS-only sources: keep them out of the iOS build so consumers running
+  # `pod install` for iOS don't pull CompositorServices / VRODriverVisionOS.h
+  # into a target where those symbols don't exist.
+  s.ios.exclude_files = ['ViroReact/VisionOS/**/*']
+
   if File.exist?(File.join(__dir__, 'dist/lib/libViroReact.a'))
     s.vendored_libraries = 'dist/lib/libViroReact.a'
   end
