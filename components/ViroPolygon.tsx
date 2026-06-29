@@ -60,7 +60,7 @@ type Props = {
    * that texture partially over the entire surface.
    */
   uvCoordinates?: ViroUVCoordinate;
-  arShadowReceiver?: boolean
+  arShadowReceiver?: boolean;
   style?: ViroStyle;
 };
 

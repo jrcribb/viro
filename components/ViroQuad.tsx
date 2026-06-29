@@ -18,7 +18,7 @@ import { checkMisnamedProps } from "./Utilities/ViroProps";
 import { ViroBase } from "./ViroBase";
 
 type Props = {
-  arShadowReceiver?: boolean
+  arShadowReceiver?: boolean;
   uvCoordinates?: ViroUVCoordinate[];
 };
 
